@@ -9,49 +9,32 @@
   <body>
     <main class="app">
       <header class="topbar">
+        <select id="projectSwitch" class="select" aria-label="Switch project"></select>
         <input
-          id="projectInput"
+          id="projectName"
           class="input project"
           type="text"
-          list="projectList"
-          placeholder="Project"
+          placeholder="Project name"
           autocomplete="off"
+          aria-label="Project name"
         />
-        <datalist id="projectList"></datalist>
-        <div class="meta">
-          <span id="windowLabel">Window</span>
-          <span class="dot">&middot;</span>
-          <span id="saveStatus">Loading</span>
-        </div>
       </header>
 
-      <section class="field-group">
-        <label class="label" for="objectiveInput">Current objective</label>
-        <input
-          id="objectiveInput"
-          class="input objective"
-          type="text"
-          placeholder="What are you working on?"
-          autocomplete="off"
-        />
+      <section class="field-group grow">
+        <textarea id="notesInput" class="textarea" placeholder="Notes"></textarea>
       </section>
 
       <section class="field-group grow">
-        <label class="label" for="notesInput">Notes</label>
-        <textarea id="notesInput" class="textarea" placeholder="Project notes"></textarea>
-      </section>
-
-      <section class="field-group grow">
-        <label class="label" for="scratchpadInput">Scratchpad</label>
         <textarea
           id="scratchpadInput"
           class="textarea"
-          placeholder="Shared across every window"
+          placeholder="Scratchpad &mdash; shared across every window"
         ></textarea>
       </section>
 
       <footer class="footer">
         <button id="exportButton" type="button">Export Markdown</button>
+        <span id="saveStatus" class="status">Loading</span>
       </footer>
     </main>
 

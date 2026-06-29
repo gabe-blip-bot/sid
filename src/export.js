@@ -2,7 +2,7 @@
 // Build and download a Markdown snapshot of the current window's context.
 
 // Compose the Markdown document. `tabs` is an array of { title, url }.
-export function buildMarkdown({ project, objective, notes, scratchpad, tabs }) {
+export function buildMarkdown({ project, notes, scratchpad, tabs }) {
   const openTabs = tabs
     .filter((tab) => tab.url)
     .map((tab) => `- [${tab.title || 'Untitled'}](${tab.url})`)
@@ -10,10 +10,6 @@ export function buildMarkdown({ project, objective, notes, scratchpad, tabs }) {
 
   return [
     `# ${project || 'Untitled project'}`,
-    '',
-    '## Current objective',
-    '',
-    objective || '_None_',
     '',
     '## Notes',
     '',

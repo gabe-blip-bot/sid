@@ -7,22 +7,20 @@ import * as projects from './projects.js';
 import { buildMarkdown, downloadMarkdown, fileName } from './export.js';
 
 const SAVE_DELAY = 400; // ms to debounce writes
-const DEFAULT_PROJECT = 'Untitled';
+const NEW_OPTION = '__new__'; // sentinel value for the "New project" choice
 
 const els = {
-  windowLabel: document.getElementById('windowLabel'),
-  saveStatus: document.getElementById('saveStatus'),
-  projectInput: document.getElementById('projectInput'),
-  projectList: document.getElementById('projectList'),
-  objectiveInput: document.getElementById('objectiveInput'),
+  projectSwitch: document.getElementById('projectSwitch'),
+  projectName: document.getElementById('projectName'),
   notesInput: document.getElementById('notesInput'),
   scratchpadInput: document.getElementById('scratchpadInput'),
-  exportButton: document.getElementById('exportButton')
+  exportButton: document.getElementById('exportButton'),
+  saveStatus: document.getElementById('saveStatus')
 };
 
 let state = projects.emptyState();
 let windowId = null;
-let currentProject = null; // name, or null when this window has no project yet
+let currentProject = null;
 let saveTimer = null;
 
 init().catch((error) => {
@@ -33,12 +31,19 @@ init().catch((error) => {
 async function init() {
   const win = await chrome.windows.getCurrent();
   windowId = String(win.id);
-  els.windowLabel.textContent = `Window ${windowId}`;
 
   state = projects.normaliseState(await storage.load());
   currentProject = projects.windowProject(state, windowId);
 
-  renderProjectList();
+  // Every window always shows a project: keep its own, adopt an existing one,
+  // or create the first default.
+  if (!currentProject) {
+    currentProject = projects.projectNames(state)[0] || projects.newProjectName(state);
+    projects.attachWindow(state, windowId, currentProject);
+    await storage.save(state);
+  }
+
+  renderProjects();
   renderFields();
   bindEvents();
   setStatus('Saved');
@@ -46,18 +51,15 @@ async function init() {
   // Keep this panel in sync when another window edits the shared state.
   storage.onChange((incoming) => {
     state = projects.normaliseState(incoming);
-    renderProjectList();
+    currentProject = projects.windowProject(state, windowId) || currentProject;
+    renderProjects();
     renderFields({ preserveFocus: true });
   });
 }
 
 function bindEvents() {
-  els.projectInput.addEventListener('change', () => selectProject(els.projectInput.value));
-
-  els.objectiveInput.addEventListener('input', () => {
-    activeProject().objective = els.objectiveInput.value;
-    scheduleSave();
-  });
+  els.projectSwitch.addEventListener('change', onSwitch);
+  els.projectName.addEventListener('change', onRename);
 
   els.notesInput.addEventListener('input', () => {
     activeProject().notes = els.notesInput.value;
@@ -72,53 +74,75 @@ function bindEvents() {
   els.exportButton.addEventListener('click', exportMarkdown);
 }
 
-// Attach this window to the named project and load its fields.
-function selectProject(rawName) {
-  const name = projects.normaliseName(rawName);
-  if (!name) {
-    els.projectInput.value = currentProject || '';
+// Dropdown: switch to an existing project, or create a fresh one.
+function onSwitch() {
+  if (els.projectSwitch.value === NEW_OPTION) {
+    currentProject = projects.newProjectName(state);
+    projects.attachWindow(state, windowId, currentProject);
+    renderProjects();
+    renderFields();
+    scheduleSave();
+    els.projectName.focus();
+    els.projectName.select();
     return;
   }
 
-  currentProject = name;
-  projects.attachWindow(state, windowId, name);
-  renderProjectList();
+  currentProject = els.projectSwitch.value;
+  projects.attachWindow(state, windowId, currentProject);
+  renderProjects();
   renderFields();
   scheduleSave();
 }
 
-// Return the current project's record, creating a default one if this window
-// has nothing attached yet (so the first keystroke is never lost).
+// Name field: rename the current project (keeping its notes).
+function onRename() {
+  const newName = projects.normaliseName(els.projectName.value);
+  if (!newName) {
+    els.projectName.value = currentProject || '';
+    return;
+  }
+
+  currentProject = projects.renameProject(state, currentProject, newName);
+  projects.attachWindow(state, windowId, currentProject);
+  renderProjects();
+  renderFields();
+  scheduleSave();
+}
+
+// Return the current project's record, creating one if somehow absent.
 function activeProject() {
   if (!currentProject) {
-    currentProject = DEFAULT_PROJECT;
+    currentProject = projects.newProjectName(state);
     projects.attachWindow(state, windowId, currentProject);
-    els.projectInput.value = currentProject;
-    renderProjectList();
+    renderProjects();
   }
   return projects.ensureProject(state, currentProject);
 }
 
-function renderProjectList() {
-  els.projectList.innerHTML = '';
+function renderProjects() {
+  els.projectSwitch.innerHTML = '';
   for (const name of projects.projectNames(state)) {
     const option = document.createElement('option');
     option.value = name;
-    els.projectList.appendChild(option);
+    option.textContent = name;
+    els.projectSwitch.appendChild(option);
+  }
+  const newOption = document.createElement('option');
+  newOption.value = NEW_OPTION;
+  newOption.textContent = '+ New project';
+  els.projectSwitch.appendChild(newOption);
+
+  els.projectSwitch.value = currentProject || '';
+  if (document.activeElement !== els.projectName) {
+    els.projectName.value = currentProject || '';
   }
 }
 
-// Push state into the inputs. Skip a field the user is actively typing in so a
+// Push state into the fields. Skip a field the user is actively typing in so a
 // remote update never yanks the cursor.
 function renderFields({ preserveFocus = false } = {}) {
   const project = projects.getProject(state, currentProject);
 
-  if (document.activeElement !== els.projectInput) {
-    els.projectInput.value = currentProject || '';
-  }
-  if (!(preserveFocus && document.activeElement === els.objectiveInput)) {
-    els.objectiveInput.value = project.objective || '';
-  }
   if (!(preserveFocus && document.activeElement === els.notesInput)) {
     els.notesInput.value = project.notes || '';
   }
@@ -145,7 +169,6 @@ async function exportMarkdown() {
   const project = projects.getProject(state, currentProject);
   const markdown = buildMarkdown({
     project: currentProject,
-    objective: project.objective,
     notes: project.notes,
     scratchpad: state.scratchpad,
     tabs

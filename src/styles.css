@@ -53,26 +53,9 @@ body {
   gap: 8px;
 }
 
-.meta {
-  color: var(--muted);
-  font-size: 12px;
-  padding-left: 2px;
-}
-
-.dot {
-  margin: 0 4px;
-}
-
 .field-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-
-.label {
-  color: var(--muted);
-  font-size: 12px;
-  padding-left: 2px;
 }
 
 .grow {
@@ -81,6 +64,7 @@ body {
 }
 
 .input,
+.select,
 .textarea {
   width: 100%;
   border: 1px solid var(--border);
@@ -89,14 +73,23 @@ body {
   color: var(--text);
   font: inherit;
   outline: none;
-  padding: 11px 12px;
 }
 
-.input {
+.input,
+.select {
   height: 40px;
 }
 
-.objective {
+.input {
+  padding: 11px 12px;
+}
+
+.select {
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.project {
   font-weight: 700;
 }
 
@@ -105,16 +98,26 @@ body {
   min-height: 100px;
   resize: none;
   line-height: 1.5;
+  padding: 11px 12px;
 }
 
 .input:focus,
+.select:focus,
 .textarea:focus {
   border-color: var(--focus);
 }
 
 .footer {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding-top: 4px;
+}
+
+.status {
+  color: var(--muted);
+  font-size: 12px;
 }
 
 button {
