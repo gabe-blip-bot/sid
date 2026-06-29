@@ -6,7 +6,7 @@ import * as storage from './storage.js';
 import * as projects from './projects.js';
 import { buildMarkdown, downloadMarkdown, fileName } from './export.js';
 
-const SAVE_DELAY = 400; // ms to debounce writes
+const SAVE_DELAY = 400; // ms to debounce autosave writes
 const NEW_OPTION = '__new__'; // sentinel value for the "New project" choice
 
 const els = {
@@ -14,6 +14,12 @@ const els = {
   projectName: document.getElementById('projectName'),
   notesInput: document.getElementById('notesInput'),
   scratchpadInput: document.getElementById('scratchpadInput'),
+  lastSaved: document.getElementById('lastSaved'),
+  saveProjectButton: document.getElementById('saveProjectButton'),
+  openProjectButton: document.getElementById('openProjectButton'),
+  removedSection: document.getElementById('removedSection'),
+  removedSummary: document.getElementById('removedSummary'),
+  removedList: document.getElementById('removedList'),
   exportButton: document.getElementById('exportButton'),
   saveStatus: document.getElementById('saveStatus')
 };
@@ -43,8 +49,7 @@ async function init() {
     await storage.save(state);
   }
 
-  renderProjects();
-  renderFields();
+  renderAll();
   bindEvents();
   setStatus('Saved');
 
@@ -52,8 +57,7 @@ async function init() {
   storage.onChange((incoming) => {
     state = projects.normaliseState(incoming);
     currentProject = projects.windowProject(state, windowId) || currentProject;
-    renderProjects();
-    renderFields({ preserveFocus: true });
+    renderAll({ preserveFocus: true });
   });
 }
 
@@ -71,16 +75,19 @@ function bindEvents() {
     scheduleSave();
   });
 
+  els.saveProjectButton.addEventListener('click', saveProject);
+  els.openProjectButton.addEventListener('click', openProject);
   els.exportButton.addEventListener('click', exportMarkdown);
 }
+
+// --- Project selection -----------------------------------------------------
 
 // Dropdown: switch to an existing project, or create a fresh one.
 function onSwitch() {
   if (els.projectSwitch.value === NEW_OPTION) {
     currentProject = projects.newProjectName(state);
     projects.attachWindow(state, windowId, currentProject);
-    renderProjects();
-    renderFields();
+    renderAll();
     scheduleSave();
     els.projectName.focus();
     els.projectName.select();
@@ -89,12 +96,11 @@ function onSwitch() {
 
   currentProject = els.projectSwitch.value;
   projects.attachWindow(state, windowId, currentProject);
-  renderProjects();
-  renderFields();
+  renderAll();
   scheduleSave();
 }
 
-// Name field: rename the current project (keeping its notes).
+// Name field: rename the current project (keeping its notes and workspace).
 function onRename() {
   const newName = projects.normaliseName(els.projectName.value);
   if (!newName) {
@@ -104,8 +110,7 @@ function onRename() {
 
   currentProject = projects.renameProject(state, currentProject, newName);
   projects.attachWindow(state, windowId, currentProject);
-  renderProjects();
-  renderFields();
+  renderAll();
   scheduleSave();
 }
 
@@ -114,9 +119,85 @@ function activeProject() {
   if (!currentProject) {
     currentProject = projects.newProjectName(state);
     projects.attachWindow(state, windowId, currentProject);
-    renderProjects();
+    renderAll();
   }
   return projects.ensureProject(state, currentProject);
+}
+
+// --- Workspace -------------------------------------------------------------
+
+// Capture this window's reopenable tabs as the project's workspace snapshot.
+async function saveProject() {
+  const tabs = await chrome.tabs.query({ currentWindow: true });
+  const reopenable = tabs.filter((t) => projects.isReopenable(t.url));
+  const updated = projects.captureWorkspace(activeProject(), reopenable, Date.now());
+
+  state.projects[currentProject] = updated;
+  await storage.save(state);
+  renderWorkspace();
+  renderRemoved();
+  setStatus('Saved');
+}
+
+// Open the saved workspace in a window and attach it to this project. If the
+// project already has another live window, focus that instead of duplicating.
+async function openProject() {
+  const existing = await otherWindowFor(currentProject);
+  if (existing != null) {
+    await chrome.windows.update(existing, { focused: true });
+    return;
+  }
+
+  const project = projects.getProject(state, currentProject);
+  const urls = ((project.workspace && project.workspace.tabs) || [])
+    .map((t) => t.url)
+    .filter(projects.isReopenable);
+
+  if (!urls.length) {
+    setStatus('Nothing saved to open');
+    return;
+  }
+
+  const win = await chrome.windows.create({ url: urls });
+  projects.attachWindow(state, String(win.id), currentProject);
+  await storage.save(state);
+
+  // Best effort: Chrome only allows opening the panel within a live user
+  // gesture, which the await above may have spent.
+  try {
+    await chrome.sidePanel.open({ windowId: win.id });
+  } catch (error) {
+    // Ignored: the user can open the panel from the toolbar.
+  }
+}
+
+// A still-open window attached to `name`, other than this one, or null.
+async function otherWindowFor(name) {
+  const candidates = Object.keys(state.windows).filter(
+    (id) => state.windows[id] === name && id !== windowId
+  );
+  if (!candidates.length) return null;
+
+  const open = new Set((await chrome.windows.getAll()).map((w) => String(w.id)));
+  const match = candidates.find((id) => open.has(id));
+  return match ? Number(match) : null;
+}
+
+// Reopen a removed tab in this window and drop it from the archive.
+async function restoreTab(url) {
+  await chrome.tabs.create({ url, windowId: Number(windowId) });
+  state.projects[currentProject] = projects.unarchiveTab(activeProject(), url);
+  await storage.save(state);
+  renderRemoved();
+}
+
+// --- Rendering -------------------------------------------------------------
+
+function renderAll({ preserveFocus = false } = {}) {
+  renderProjects();
+  renderFields({ preserveFocus });
+  renderWorkspace();
+  renderRemoved();
 }
 
 function renderProjects() {
@@ -138,8 +219,8 @@ function renderProjects() {
   }
 }
 
-// Push state into the fields. Skip a field the user is actively typing in so a
-// remote update never yanks the cursor.
+// Push state into the text fields. Skip a field the user is actively typing in
+// so a remote update never yanks the cursor.
 function renderFields({ preserveFocus = false } = {}) {
   const project = projects.getProject(state, currentProject);
 
@@ -150,6 +231,51 @@ function renderFields({ preserveFocus = false } = {}) {
     els.scratchpadInput.value = state.scratchpad || '';
   }
 }
+
+function renderWorkspace() {
+  const workspace = projects.getProject(state, currentProject).workspace;
+  els.lastSaved.textContent = workspace
+    ? `Last saved ${new Date(workspace.savedAt).toLocaleString()}`
+    : 'Not saved yet';
+}
+
+function renderRemoved() {
+  const removed = projects.getProject(state, currentProject).removedTabs || [];
+  els.removedSection.hidden = removed.length === 0;
+  els.removedSummary.textContent = `Removed Tabs (${removed.length})`;
+
+  els.removedList.innerHTML = '';
+  for (const tab of removed) {
+    const item = document.createElement('li');
+    item.className = 'removed-item';
+
+    const meta = document.createElement('div');
+    meta.className = 'removed-meta';
+
+    const title = document.createElement('div');
+    title.className = 'removed-title';
+    title.textContent = tab.title || tab.url;
+
+    const link = document.createElement('a');
+    link.className = 'removed-url';
+    link.href = tab.url;
+    link.textContent = tab.url;
+    link.target = '_blank';
+    link.rel = 'noreferrer';
+
+    meta.append(title, link);
+
+    const restore = document.createElement('button');
+    restore.type = 'button';
+    restore.textContent = 'Restore';
+    restore.addEventListener('click', () => restoreTab(tab.url));
+
+    item.append(meta, restore);
+    els.removedList.appendChild(item);
+  }
+}
+
+// --- Persistence & export --------------------------------------------------
 
 function scheduleSave() {
   setStatus('Saving');
@@ -165,13 +291,15 @@ function setStatus(text) {
 }
 
 async function exportMarkdown() {
-  const tabs = await chrome.tabs.query({ currentWindow: true });
+  const liveTabs = await chrome.tabs.query({ currentWindow: true });
   const project = projects.getProject(state, currentProject);
   const markdown = buildMarkdown({
     project: currentProject,
     notes: project.notes,
     scratchpad: state.scratchpad,
-    tabs
+    liveTabs: liveTabs.map((t) => ({ title: t.title, url: t.url })),
+    workspace: project.workspace,
+    removedTabs: project.removedTabs || []
   });
   downloadMarkdown(fileName(currentProject), markdown);
 }
