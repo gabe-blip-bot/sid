@@ -1,14 +1,15 @@
 // export.js
 // Build and download a Markdown snapshot of the current window's context.
 
-// Compose the Markdown document. `tabs` is an array of { title, url }.
-export function buildMarkdown({ project, notes, scratchpad, tabs }) {
-  const openTabs = tabs
-    .filter((tab) => tab.url)
-    .map((tab) => `- [${tab.title || 'Untitled'}](${tab.url})`)
-    .join('\n');
+function tabLines(tabs) {
+  const items = (tabs || []).filter((t) => t.url);
+  if (!items.length) return '_None_';
+  return items.map((t) => `- [${t.title || 'Untitled'}](${t.url})`).join('\n');
+}
 
-  return [
+// Compose the Markdown document.
+export function buildMarkdown({ project, notes, scratchpad, liveTabs, workspace, removedTabs }) {
+  const lines = [
     `# ${project || 'Untitled project'}`,
     '',
     '## Notes',
@@ -19,11 +20,29 @@ export function buildMarkdown({ project, notes, scratchpad, tabs }) {
     '',
     scratchpad || '_None_',
     '',
-    '## Open tabs',
+    '## Open tabs (live)',
     '',
-    openTabs || '_None_',
+    tabLines(liveTabs),
+    '',
+    '## Saved workspace',
     ''
-  ].join('\n');
+  ];
+
+  if (workspace && workspace.tabs && workspace.tabs.length) {
+    lines.push(`_Saved ${new Date(workspace.savedAt).toLocaleString()}_`, '', tabLines(workspace.tabs));
+  } else {
+    lines.push('_None_');
+  }
+
+  lines.push('', '## Removed tabs', '');
+  if (removedTabs && removedTabs.length) {
+    lines.push(removedTabs.map((t) => `- [${t.title || 'Untitled'}](${t.url})`).join('\n'));
+  } else {
+    lines.push('_None_');
+  }
+
+  lines.push('');
+  return lines.join('\n');
 }
 
 // Trigger a file download from the side panel document.

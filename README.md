@@ -14,11 +14,18 @@ It is not a task manager, not a notes app, and not an AI assistant.
   project.
 - **Notes** — multiline, belongs to the project.
 - **Scratchpad** — multiline, shared across every window.
+- **Workspace** — **Save Project** captures the current window's reopenable tabs
+  (title + URL, in order) with a timestamp as the project's snapshot. **Open
+  Project** reopens that snapshot in a window and attaches it to the project,
+  focusing an existing project window if one is already open.
+- **Removed Tabs** — when a save no longer contains a previously saved tab, it is
+  archived here (by URL, deduped). **Restore** reopens it and clears it from the
+  list. A tab that reappears in a later save leaves the archive automatically.
 - Switching windows switches to that window's project automatically.
-- Everything autosaves to Chrome local storage with debounced writes; the save
-  status sits in the footer next to the export button.
-- **Export Markdown** downloads the project, notes, scratchpad, and every open
-  tab (title and URL) for the current window.
+- Notes and scratchpad autosave to Chrome local storage with debounced writes;
+  the save status sits in the footer. Saving a project writes immediately.
+- **Export Markdown** downloads the project's notes, scratchpad, current live
+  tabs, saved workspace, and removed tabs.
 
 All data stays in Chrome local storage. No accounts, no network requests.
 

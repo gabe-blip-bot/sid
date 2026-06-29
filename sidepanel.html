@@ -32,6 +32,22 @@
         ></textarea>
       </section>
 
+      <section class="workspace">
+        <div class="workspace-head">
+          <span class="section-title">Workspace</span>
+          <span id="lastSaved" class="status">Not saved yet</span>
+        </div>
+        <div class="workspace-actions">
+          <button id="saveProjectButton" class="primary" type="button">Save Project</button>
+          <button id="openProjectButton" type="button">Open Project</button>
+        </div>
+      </section>
+
+      <details id="removedSection" class="removed" hidden>
+        <summary id="removedSummary">Removed Tabs</summary>
+        <ul id="removedList" class="removed-list"></ul>
+      </details>
+
       <footer class="footer">
         <button id="exportButton" type="button">Export Markdown</button>
         <span id="saveStatus" class="status">Loading</span>
