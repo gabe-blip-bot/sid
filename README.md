@@ -1,65 +1,47 @@
 # Sid
 
-Sid is a small Chrome side panel extension for keeping browser context close to the work.
+Sid is a lightweight browser context layer that lives in the Chrome side panel.
 
-It supports:
+It exists to answer one question immediately: **what was I working on?**
 
-- project selection per Chrome window
-- creating a new project by typing its name
-- reattaching a window to an existing project from the project field
-- current objective
-- project notes
-- one shared scratchpad across all windows
-- local autosave
-- optional Google Drive sync
-- Markdown export with open tab URLs
+It is not a task manager, not a notes app, and not an AI assistant.
 
-## Local development workflow
+## How it works
 
-1. Keep this folder somewhere stable, for example:
+- Each Chrome window is attached to a project.
+- The header has a project selector (autocomplete existing projects, or type a
+  new name to create one), the window number, and the save status.
+- **Current objective** — a single bold line.
+- **Notes** — multiline, belongs to the project.
+- **Scratchpad** — multiline, shared across every window.
+- Switching windows switches to that window's project automatically.
+- Everything autosaves to Chrome local storage with debounced writes.
+- **Export Markdown** downloads the project, objective, notes, scratchpad, and
+  every open tab (title and URL) for the current window.
 
-```bash
-~/Projects/sid
-```
+All data stays in Chrome local storage. No accounts, no network requests.
 
-2. Open Chrome:
+## Install
+
+1. Open `chrome://extensions`.
+2. Enable **Developer mode**.
+3. Click **Load unpacked**.
+4. Select this folder.
+5. Click the Sid toolbar icon to open the side panel.
+
+After editing files, click **Reload** on the Sid card.
+
+## Layout
 
 ```text
-chrome://extensions
+manifest.json     extension manifest (Manifest V3)
+sidepanel.html    side panel markup
+src/
+  background.js   opens the side panel on toolbar click
+  ui.js           DOM wiring, autosave, orchestration
+  storage.js      chrome.storage.local wrapper
+  projects.js     project/state data model
+  export.js       Markdown export
+  styles.css      side panel styling
+icons/            toolbar icons
 ```
-
-3. Enable **Developer mode**.
-4. Click **Load unpacked**.
-5. Select the `sid` folder.
-6. After future file changes, click **Reload** on the extension card.
-
-Do not repeatedly load different downloaded folders if you are using Google OAuth. Keep one stable local folder.
-
-## Optional GitHub workflow
-
-```bash
-cd ~/Projects/sid
-git init
-git add .
-git commit -m "Initial Sid extension"
-```
-
-Create an empty GitHub repository called `sid`, then:
-
-```bash
-git remote add origin git@github.com:YOUR-USERNAME/sid.git
-git branch -M main
-git push -u origin main
-```
-
-After future updates:
-
-```bash
-git pull
-```
-
-Then reload the extension in Chrome.
-
-## Google Drive
-
-See `GOOGLE_DRIVE_SETUP.md`.

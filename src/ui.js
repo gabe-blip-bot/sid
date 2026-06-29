@@ -1,4 +1,12 @@
-const STORAGE_KEY = 'sidState.v1';
+// ui.js
+// Wires the side panel DOM to the storage and project modules.
+// Owns the in-memory state and the debounced autosave.
+
+import * as storage from './storage.js';
+import * as projects from './projects.js';
+import { buildMarkdown, downloadMarkdown, fileName } from './export.js';
+
+const SAVE_DELAY = 400; // ms to debounce writes
 const DEFAULT_PROJECT = 'Untitled';
 
 const els = {
@@ -9,51 +17,50 @@ const els = {
   objectiveInput: document.getElementById('objectiveInput'),
   notesInput: document.getElementById('notesInput'),
   scratchpadInput: document.getElementById('scratchpadInput'),
-  exportButton: document.getElementById('exportButton'),
-  connectDriveButton: document.getElementById('connectDriveButton'),
-  saveDriveButton: document.getElementById('saveDriveButton')
+  exportButton: document.getElementById('exportButton')
 };
 
-let state = {
-  windows: {},
-  projects: {},
-  scratchpad: '',
-  drive: {}
-};
-
-let currentWindowId = null;
-let currentProjectName = DEFAULT_PROJECT;
+let state = projects.emptyState();
+let windowId = null;
+let currentProject = null; // name, or null when this window has no project yet
 let saveTimer = null;
 
 init().catch((error) => {
   console.error(error);
-  setStatus(`Error: ${getErrorMessage(error)}`);
+  setStatus('Error');
 });
 
 async function init() {
-  const currentWindow = await chrome.windows.getCurrent();
-  currentWindowId = String(currentWindow.id);
-  els.windowLabel.textContent = `Window ${currentWindowId}`;
+  const win = await chrome.windows.getCurrent();
+  windowId = String(win.id);
+  els.windowLabel.textContent = `Window ${windowId}`;
 
-  state = await loadState();
-  currentProjectName = state.windows[currentWindowId]?.projectName || DEFAULT_PROJECT;
-  ensureProject(currentProjectName);
-  render();
+  state = projects.normaliseState(await storage.load());
+  currentProject = projects.windowProject(state, windowId);
+
+  renderProjectList();
+  renderFields();
   bindEvents();
   setStatus('Saved');
+
+  // Keep this panel in sync when another window edits the shared state.
+  storage.onChange((incoming) => {
+    state = projects.normaliseState(incoming);
+    renderProjectList();
+    renderFields({ preserveFocus: true });
+  });
 }
 
 function bindEvents() {
-  els.projectInput.addEventListener('change', () => attachProject(els.projectInput.value));
-  els.projectInput.addEventListener('blur', () => attachProject(els.projectInput.value));
+  els.projectInput.addEventListener('change', () => selectProject(els.projectInput.value));
 
   els.objectiveInput.addEventListener('input', () => {
-    ensureProject(currentProjectName).objective = els.objectiveInput.value;
+    activeProject().objective = els.objectiveInput.value;
     scheduleSave();
   });
 
   els.notesInput.addEventListener('input', () => {
-    ensureProject(currentProjectName).notes = els.notesInput.value;
+    activeProject().notes = els.notesInput.value;
     scheduleSave();
   });
 
@@ -63,92 +70,70 @@ function bindEvents() {
   });
 
   els.exportButton.addEventListener('click', exportMarkdown);
-  els.connectDriveButton.addEventListener('click', connectDrive);
-  els.saveDriveButton.addEventListener('click', saveDrive);
-
-  chrome.storage.onChanged.addListener((changes, area) => {
-    if (area !== 'local' || !changes[STORAGE_KEY]) return;
-    const incoming = changes[STORAGE_KEY].newValue;
-    if (!incoming) return;
-    state = incoming;
-    ensureProject(currentProjectName);
-    render({ preserveFocus: true });
-  });
 }
 
-function render(options = {}) {
-  els.projectInput.value = currentProjectName;
-  els.projectList.innerHTML = '';
+// Attach this window to the named project and load its fields.
+function selectProject(rawName) {
+  const name = projects.normaliseName(rawName);
+  if (!name) {
+    els.projectInput.value = currentProject || '';
+    return;
+  }
 
-  for (const name of Object.keys(state.projects).sort((a, b) => a.localeCompare(b))) {
+  currentProject = name;
+  projects.attachWindow(state, windowId, name);
+  renderProjectList();
+  renderFields();
+  scheduleSave();
+}
+
+// Return the current project's record, creating a default one if this window
+// has nothing attached yet (so the first keystroke is never lost).
+function activeProject() {
+  if (!currentProject) {
+    currentProject = DEFAULT_PROJECT;
+    projects.attachWindow(state, windowId, currentProject);
+    els.projectInput.value = currentProject;
+    renderProjectList();
+  }
+  return projects.ensureProject(state, currentProject);
+}
+
+function renderProjectList() {
+  els.projectList.innerHTML = '';
+  for (const name of projects.projectNames(state)) {
     const option = document.createElement('option');
     option.value = name;
     els.projectList.appendChild(option);
   }
+}
 
-  const project = ensureProject(currentProjectName);
+// Push state into the inputs. Skip a field the user is actively typing in so a
+// remote update never yanks the cursor.
+function renderFields({ preserveFocus = false } = {}) {
+  const project = projects.getProject(state, currentProject);
 
-  if (!(options.preserveFocus && document.activeElement === els.objectiveInput)) {
+  if (document.activeElement !== els.projectInput) {
+    els.projectInput.value = currentProject || '';
+  }
+  if (!(preserveFocus && document.activeElement === els.objectiveInput)) {
     els.objectiveInput.value = project.objective || '';
   }
-
-  if (!(options.preserveFocus && document.activeElement === els.notesInput)) {
+  if (!(preserveFocus && document.activeElement === els.notesInput)) {
     els.notesInput.value = project.notes || '';
   }
-
-  if (!(options.preserveFocus && document.activeElement === els.scratchpadInput)) {
+  if (!(preserveFocus && document.activeElement === els.scratchpadInput)) {
     els.scratchpadInput.value = state.scratchpad || '';
   }
-}
-
-function attachProject(rawName) {
-  const name = normaliseProjectName(rawName);
-  if (!name) {
-    els.projectInput.value = currentProjectName;
-    return;
-  }
-
-  currentProjectName = name;
-  ensureProject(name);
-  state.windows[currentWindowId] = { projectName: name };
-  render();
-  scheduleSave();
-}
-
-function ensureProject(name) {
-  if (!state.projects[name]) {
-    state.projects[name] = {
-      objective: '',
-      notes: ''
-    };
-  }
-  if (!state.windows[currentWindowId]) {
-    state.windows[currentWindowId] = { projectName: name };
-  }
-  return state.projects[name];
-}
-
-async function loadState() {
-  const data = await chrome.storage.local.get(STORAGE_KEY);
-  return {
-    windows: {},
-    projects: {},
-    scratchpad: '',
-    drive: {},
-    ...(data[STORAGE_KEY] || {})
-  };
 }
 
 function scheduleSave() {
   setStatus('Saving');
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(saveLocal, 350);
-}
-
-async function saveLocal() {
-  state.windows[currentWindowId] = { projectName: currentProjectName };
-  await chrome.storage.local.set({ [STORAGE_KEY]: state });
-  setStatus('Saved');
+  saveTimer = setTimeout(async () => {
+    await storage.save(state);
+    setStatus('Saved');
+  }, SAVE_DELAY);
 }
 
 function setStatus(text) {
@@ -156,69 +141,14 @@ function setStatus(text) {
 }
 
 async function exportMarkdown() {
-  await saveLocal();
   const tabs = await chrome.tabs.query({ currentWindow: true });
-  const project = ensureProject(currentProjectName);
-  const markdown = buildProjectMarkdown(currentProjectName, project, tabs, state.scratchpad);
-  downloadText(`${safeFileName(currentProjectName)}.md`, markdown);
-}
-
-function buildProjectMarkdown(projectName, project, tabs, scratchpad) {
-  const tabLines = tabs
-    .filter((tab) => tab.url)
-    .map((tab) => `- ${tab.title || 'Untitled'}\n  ${tab.url}`)
-    .join('\n');
-
-  return `# ${projectName}\n\n## Current objective\n\n${project.objective || ''}\n\n## Notes\n\n${project.notes || ''}\n\n## Open tabs\n\n${tabLines || 'No tabs captured.'}\n\n## Scratchpad\n\n${scratchpad || ''}\n`;
-}
-
-function downloadText(filename, text) {
-  const blob = new Blob([text], { type: 'text/markdown' });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = filename;
-  anchor.click();
-  URL.revokeObjectURL(url);
-}
-
-async function connectDrive() {
-  try {
-    setStatus('Connecting Drive');
-    await getDriveToken();
-    setStatus('Drive connected');
-  } catch (error) {
-    console.error(error);
-    setStatus(`Drive: ${getErrorMessage(error)}`);
-  }
-}
-
-async function saveDrive() {
-  // Placeholder for the full Drive API implementation. Local autosave remains active.
-  try {
-    await getDriveToken();
-    setStatus('Drive ready');
-  } catch (error) {
-    console.error(error);
-    setStatus(`Drive: ${getErrorMessage(error)}`);
-  }
-}
-
-async function getDriveToken() {
-  return await chrome.identity.getAuthToken({ interactive: true });
-}
-
-function getErrorMessage(error) {
-  if (chrome.runtime.lastError?.message) return chrome.runtime.lastError.message;
-  if (error?.message) return error.message;
-  if (typeof error === 'string') return error;
-  return 'Unknown error';
-}
-
-function normaliseProjectName(value) {
-  return value.trim().replace(/\s+/g, ' ');
-}
-
-function safeFileName(value) {
-  return normaliseProjectName(value).replace(/[\\/:*?"<>|]/g, '-').slice(0, 80) || DEFAULT_PROJECT;
+  const project = projects.getProject(state, currentProject);
+  const markdown = buildMarkdown({
+    project: currentProject,
+    objective: project.objective,
+    notes: project.notes,
+    scratchpad: state.scratchpad,
+    tabs
+  });
+  downloadMarkdown(fileName(currentProject), markdown);
 }

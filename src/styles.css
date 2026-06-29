@@ -1,25 +1,25 @@
 :root {
   color-scheme: light dark;
   --bg: #ffffff;
-  --text: #202124;
+  --text: #1f1f1f;
   --muted: #5f6368;
   --border: #dadce0;
   --field: #ffffff;
   --button: #f8fafd;
   --button-hover: #f1f3f4;
-  --focus: #1a73e8;
+  --focus: #0b57d0;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #202124;
-    --text: #e8eaed;
+    --bg: #1f1f1f;
+    --text: #e3e3e3;
     --muted: #9aa0a6;
-    --border: #3c4043;
-    --field: #292a2d;
+    --border: #444746;
+    --field: #2d2d2d;
     --button: #303134;
     --button-hover: #3c4043;
-    --focus: #8ab4f8;
+    --focus: #a8c7fa;
   }
 }
 
@@ -43,27 +43,24 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
-  gap: 12px;
-  padding: 12px;
+  gap: 16px;
+  padding: 16px;
 }
 
 .topbar {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 28px;
-}
-
-.brand {
-  font-size: 15px;
-  font-weight: 600;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .meta {
   color: var(--muted);
   font-size: 12px;
-  white-space: nowrap;
+  padding-left: 2px;
+}
+
+.dot {
+  margin: 0 4px;
 }
 
 .field-group {
@@ -72,29 +69,31 @@ body {
   gap: 6px;
 }
 
-.grow {
-  flex: 1;
-  min-height: 160px;
+.label {
+  color: var(--muted);
+  font-size: 12px;
+  padding-left: 2px;
 }
 
-.scratchpad-wrap {
-  min-height: 140px;
+.grow {
+  flex: 1;
+  min-height: 120px;
 }
 
 .input,
 .textarea {
   width: 100%;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--field);
   color: var(--text);
   font: inherit;
   outline: none;
-  padding: 10px;
+  padding: 11px 12px;
 }
 
 .input {
-  height: 38px;
+  height: 40px;
 }
 
 .objective {
@@ -102,9 +101,10 @@ body {
 }
 
 .textarea {
-  min-height: 100%;
+  flex: 1;
+  min-height: 100px;
   resize: none;
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
 .input:focus,
@@ -114,8 +114,6 @@ body {
 
 .footer {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
   padding-top: 4px;
 }
 
@@ -125,7 +123,8 @@ button {
   background: var(--button);
   color: var(--text);
   font: inherit;
-  padding: 7px 11px;
+  font-weight: 500;
+  padding: 9px 16px;
   cursor: pointer;
 }
 
