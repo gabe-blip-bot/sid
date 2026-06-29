@@ -1,17 +1,16 @@
 // ui.js
 // Wires the side panel DOM to the storage and project modules.
-// Owns the in-memory state and the debounced autosave.
+// Owns the in-memory state, the debounced autosave, and the project combobox.
 
 import * as storage from './storage.js';
 import * as projects from './projects.js';
 import { buildMarkdown, downloadMarkdown, fileName } from './export.js';
 
 const SAVE_DELAY = 400; // ms to debounce autosave writes
-const NEW_OPTION = '__new__'; // sentinel value for the "New project" choice
 
 const els = {
-  projectSwitch: document.getElementById('projectSwitch'),
-  projectName: document.getElementById('projectName'),
+  projectInput: document.getElementById('projectInput'),
+  projectListbox: document.getElementById('projectListbox'),
   notesInput: document.getElementById('notesInput'),
   scratchpadInput: document.getElementById('scratchpadInput'),
   lastSaved: document.getElementById('lastSaved'),
@@ -27,6 +26,11 @@ let state = projects.emptyState();
 let windowId = null;
 let currentProject = null;
 let saveTimer = null;
+
+// Combobox state.
+let comboOpen = false;
+let comboRows = []; // [{ kind:'project'|'create'|'rename'|'hint', name?, text? }]
+let highlight = -1; // index into comboRows of the active row
 
 init().catch((error) => {
   console.error(error);
@@ -55,12 +59,20 @@ async function init() {
     state = projects.normaliseState(incoming);
     currentProject = projects.windowProject(state, windowId) || currentProject;
     renderAll({ preserveFocus: true });
+    if (comboOpen) renderList();
   });
 }
 
 function bindEvents() {
-  els.projectSwitch.addEventListener('change', onSwitch);
-  els.projectName.addEventListener('change', onRename);
+  els.projectInput.addEventListener('focus', openCombo);
+  els.projectInput.addEventListener('input', () => {
+    if (!comboOpen) openCombo();
+    else renderList();
+  });
+  els.projectInput.addEventListener('keydown', onComboKey);
+  els.projectInput.addEventListener('blur', closeCombo);
+  // Keep focus on the input when clicking a row, so blur doesn't pre-empt click.
+  els.projectListbox.addEventListener('mousedown', (e) => e.preventDefault());
 
   els.notesInput.addEventListener('input', () => {
     activeProject().notes = els.notesInput.value;
@@ -77,36 +89,162 @@ function bindEvents() {
   els.exportButton.addEventListener('click', exportMarkdown);
 }
 
-// --- Project selection -----------------------------------------------------
+// --- Project combobox ------------------------------------------------------
 
-// Dropdown: switch to an existing project, or create a fresh one.
-function onSwitch() {
-  if (els.projectSwitch.value === NEW_OPTION) {
-    currentProject = projects.newProjectName(state);
-    projects.attachWindow(state, windowId, currentProject);
-    renderAll();
-    scheduleSave();
-    els.projectName.focus();
-    els.projectName.select();
-    return;
-  }
-
-  currentProject = els.projectSwitch.value;
-  projects.attachWindow(state, windowId, currentProject);
-  renderAll();
-  scheduleSave();
+function openCombo() {
+  comboOpen = true;
+  els.projectInput.setAttribute('aria-expanded', 'true');
+  els.projectListbox.hidden = false;
+  renderList();
 }
 
-// Name field: rename the current project (keeping its notes and workspace).
-function onRename() {
-  const newName = projects.normaliseName(els.projectName.value);
-  if (!newName) {
-    els.projectName.value = currentProject || '';
+function closeCombo() {
+  comboOpen = false;
+  els.projectInput.setAttribute('aria-expanded', 'false');
+  els.projectInput.removeAttribute('aria-activedescendant');
+  els.projectListbox.hidden = true;
+  els.projectListbox.innerHTML = '';
+  highlight = -1;
+  // Drop any uncommitted text.
+  els.projectInput.value = currentProject || '';
+}
+
+function onComboKey(event) {
+  switch (event.key) {
+    case 'ArrowDown':
+      event.preventDefault();
+      if (!comboOpen) openCombo();
+      else moveHighlight(1);
+      break;
+    case 'ArrowUp':
+      event.preventDefault();
+      moveHighlight(-1);
+      break;
+    case 'Enter': {
+      event.preventDefault();
+      const row = comboRows[highlight];
+      if (comboOpen && row && row.kind !== 'hint') commitRow(row);
+      else closeCombo();
+      break;
+    }
+    case 'Escape':
+      event.preventDefault();
+      closeCombo();
+      break;
+    case 'Tab':
+      closeCombo();
+      break;
+    default:
+      break;
+  }
+}
+
+function renderList() {
+  const { rows, exact } = projects.projectMenuRows(
+    projects.projectNames(state),
+    els.projectInput.value,
+    currentProject
+  );
+  comboRows = rows;
+  els.projectListbox.innerHTML = '';
+
+  rows.forEach((row, i) => {
+    const li = document.createElement('li');
+    li.id = `combo-opt-${i}`;
+
+    if (row.kind === 'hint') {
+      li.className = 'combo-hint';
+      li.textContent = row.text;
+    } else {
+      li.className = 'combo-option';
+      li.setAttribute('role', 'option');
+      if (row.kind === 'project') {
+        li.textContent = row.name;
+        if (row.name === currentProject) {
+          const badge = document.createElement('span');
+          badge.className = 'badge';
+          badge.textContent = 'current';
+          li.appendChild(badge);
+        }
+      } else if (row.kind === 'create') {
+        li.classList.add('combo-action');
+        li.textContent = `Create "${row.name}"`;
+      } else if (row.kind === 'rename') {
+        li.classList.add('combo-action');
+        li.textContent = `Rename "${currentProject}" → "${row.name}"`;
+      }
+      li.addEventListener('click', () => commitRow(row));
+      li.addEventListener('mousemove', () => setHighlight(i));
+    }
+
+    els.projectListbox.appendChild(li);
+  });
+
+  // Default highlight: an exact match, else the create row, else the current
+  // project, else the first selectable row.
+  let next = exact ? rows.findIndex((r) => r.kind === 'project' && r.name === exact) : -1;
+  if (next < 0) next = rows.findIndex((r) => r.kind === 'create');
+  if (next < 0) next = rows.findIndex((r) => r.kind === 'project' && r.name === currentProject);
+  if (next < 0) next = rows.findIndex((r) => r.kind !== 'hint');
+  setHighlight(next);
+}
+
+function setHighlight(index) {
+  highlight = index;
+  const options = els.projectListbox.children;
+  for (let i = 0; i < options.length; i += 1) {
+    options[i].classList.toggle('active', i === index);
+  }
+  if (index >= 0) {
+    els.projectInput.setAttribute('aria-activedescendant', `combo-opt-${index}`);
+    options[index].scrollIntoView({ block: 'nearest' });
+  } else {
+    els.projectInput.removeAttribute('aria-activedescendant');
+  }
+}
+
+function moveHighlight(delta) {
+  const selectable = comboRows
+    .map((row, i) => (row.kind === 'hint' ? -1 : i))
+    .filter((i) => i >= 0);
+  if (!selectable.length) return;
+
+  const pos = selectable.indexOf(highlight);
+  const nextPos = (pos + delta + selectable.length) % selectable.length;
+  setHighlight(selectable[nextPos]);
+}
+
+function commitRow(row) {
+  if (row.kind === 'project' || row.kind === 'create') gotoProject(row.name);
+  else if (row.kind === 'rename') renameCurrent(row.name);
+}
+
+// Switch to a project, creating it if the name is new.
+function gotoProject(name) {
+  const clean = projects.normaliseName(name);
+  if (!clean) {
+    closeCombo();
     return;
   }
+  currentProject = clean;
+  projects.attachWindow(state, windowId, clean);
+  commitProjectChange();
+}
 
-  currentProject = projects.renameProject(state, currentProject, newName);
+// Rename the current project. The combobox only offers this when `name` is free.
+function renameCurrent(name) {
+  const clean = projects.normaliseName(name);
+  if (!clean || !currentProject) {
+    closeCombo();
+    return;
+  }
+  currentProject = projects.renameProject(state, currentProject, clean);
   projects.attachWindow(state, windowId, currentProject);
+  commitProjectChange();
+}
+
+function commitProjectChange() {
+  closeCombo();
   renderAll();
   scheduleSave();
 }
@@ -183,29 +321,16 @@ async function restoreTab(url) {
 // --- Rendering -------------------------------------------------------------
 
 function renderAll({ preserveFocus = false } = {}) {
-  renderProjects();
+  renderProjectInput();
   renderFields({ preserveFocus });
   renderWorkspace();
   renderRemoved();
 }
 
-function renderProjects() {
-  els.projectSwitch.innerHTML = '';
-  for (const name of projects.projectNames(state)) {
-    const option = document.createElement('option');
-    option.value = name;
-    option.textContent = name;
-    els.projectSwitch.appendChild(option);
-  }
-  const newOption = document.createElement('option');
-  newOption.value = NEW_OPTION;
-  newOption.textContent = '+ New project';
-  els.projectSwitch.appendChild(newOption);
-
-  els.projectSwitch.value = currentProject || '';
-  if (document.activeElement !== els.projectName) {
-    els.projectName.value = currentProject || '';
-  }
+function renderProjectInput() {
+  // Don't clobber what the user is typing into the open combobox.
+  if (comboOpen && document.activeElement === els.projectInput) return;
+  els.projectInput.value = currentProject || '';
 }
 
 // Push state into the text fields. Skip a field the user is actively typing in

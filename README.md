@@ -9,9 +9,10 @@ It is not a task manager, not a notes app, and not an AI assistant.
 ## How it works
 
 - Each Chrome window is attached to a project.
-- The header has a project switcher (a dropdown of existing projects, plus a
-  **+ New project** option) and an editable name field for renaming the current
-  project.
+- The header is a single project combobox: click to see all projects, type to
+  filter, Enter on a new name creates it, and a **Rename** row renames the
+  current project. Renaming to a name that already exists is blocked with a hint
+  rather than merging.
 - **Notes** — multiline, belongs to the project.
 - **Scratchpad** — multiline, shared across every window.
 - **Workspace** — **Save Project** captures the current window's reopenable tabs

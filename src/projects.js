@@ -97,6 +97,36 @@ export function normaliseName(value) {
   return value.trim().replace(/\s+/g, ' ');
 }
 
+// Decide what the project combobox should show for the typed text. Pure so the
+// select/create/rename logic can be tested without the DOM.
+//   - resting (text empty or equal to current): list every project
+//   - typed an existing, non-current name: list it + an "already exists" hint
+//     (a switch, never a rename/merge)
+//   - typed a new name: a Create row, and a Rename row when it differs from current
+export function projectMenuRows(names, typedRaw, currentProject) {
+  const typed = normaliseName(typedRaw);
+  const lower = typed.toLowerCase();
+  const currentLower = (currentProject || '').toLowerCase();
+
+  const resting = lower === '' || lower === currentLower;
+  const matches = resting ? names.slice() : names.filter((n) => n.toLowerCase().includes(lower));
+  const exact = (typed && names.find((n) => n.toLowerCase() === lower)) || null;
+
+  const rows = matches.map((name) => ({ kind: 'project', name }));
+
+  if (!resting) {
+    if (exact) {
+      rows.push({ kind: 'hint', text: `"${exact}" already exists` });
+    } else {
+      rows.push({ kind: 'create', name: typed });
+      if (currentProject && lower !== currentLower) {
+        rows.push({ kind: 'rename', name: typed });
+      }
+    }
+  }
+  return { rows, exact };
+}
+
 // Tabs we can actually reopen later. Browser-internal and extension pages are
 // rejected by chrome.windows.create, so we never capture them.
 export function isReopenable(url) {
