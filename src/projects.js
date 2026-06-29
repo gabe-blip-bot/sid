@@ -62,6 +62,22 @@ export function windowProject(state, windowId) {
   return state.windows[windowId] || null;
 }
 
+// Drop bindings for windows Chrome no longer has open. `openWindowIds` is a Set
+// of String(window.id). A browser restart reassigns window IDs, so the old ones
+// become dead; clearing them keeps reopened windows from inheriting stale
+// projects. Mutates and returns state.
+export function pruneWindows(state, openWindowIds) {
+  for (const id of Object.keys(state.windows)) {
+    if (!openWindowIds.has(id)) delete state.windows[id];
+  }
+  if (state.openWindows) {
+    for (const name of Object.keys(state.openWindows)) {
+      if (!openWindowIds.has(String(state.openWindows[name]))) delete state.openWindows[name];
+    }
+  }
+  return state;
+}
+
 // Rename a project, carrying its notes and repointing every window that was
 // attached to it. If the new name already exists, treat it as a switch to that
 // project (no clobber). Returns the name now in effect.
