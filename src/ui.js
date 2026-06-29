@@ -6,6 +6,7 @@ import * as storage from './storage.js';
 import * as projects from './projects.js';
 
 const SAVE_DELAY = 400; // ms to debounce autosave writes
+const FLASH_MS = 900; // how long a "Copied" confirmation shows
 const DAYS = ['mon', 'tue', 'wed', 'thu']; // working days in the week strip
 
 const els = {
@@ -16,10 +17,8 @@ const els = {
   saveProjectButton: document.getElementById('saveProjectButton'),
   renameButton: document.getElementById('renameButton'),
   archiveButton: document.getElementById('archiveButton'),
-  lastSaved: document.getElementById('lastSaved'),
   noteAddButton: document.getElementById('noteAddButton'),
-  noteAddInput: document.getElementById('noteAddInput'),
-  sendAllButton: document.getElementById('sendAllButton'),
+  copyAllButton: document.getElementById('copyAllButton'),
   completeAllButton: document.getElementById('completeAllButton'),
   noteList: document.getElementById('noteList'),
   scratchpadInput: document.getElementById('scratchpadInput'),
@@ -33,9 +32,9 @@ let windowId = null;
 let currentProject = null;
 let saveTimer = null;
 
-// Note add/edit state.
-let addingNote = false; // is the inline add field open
+// Note edit + theme drag state.
 let editingNote = -1; // index of the note being edited inline, or -1
+let dragFrom = -1; // index of the day-theme row being dragged, or -1
 
 // Combobox state.
 let comboOpen = false;
@@ -105,10 +104,8 @@ function bindEvents() {
   els.renameInput.addEventListener('blur', exitRename);
   els.archiveButton.addEventListener('click', archiveCurrent);
 
-  els.noteAddButton.addEventListener('click', openAdd);
-  els.noteAddInput.addEventListener('keydown', onAddKey);
-  els.noteAddInput.addEventListener('blur', closeAdd);
-  els.sendAllButton.addEventListener('click', sendAllNotes);
+  els.noteAddButton.addEventListener('click', startNewNote);
+  els.copyAllButton.addEventListener('click', copyAllNotes);
   els.completeAllButton.addEventListener('click', completeAllNotes);
 
   els.scratchpadInput.addEventListener('input', () => {
@@ -117,13 +114,66 @@ function bindEvents() {
     scheduleSave();
   });
 
-  for (const day of DAYS) {
+  bindWeekStrip();
+  bindTabWatch();
+}
+
+// Wire each day-theme field (edit + drag-to-reorder).
+function bindWeekStrip() {
+  DAYS.forEach((day, index) => {
     const input = document.getElementById(`theme-${day}`);
     input.addEventListener('input', () => {
       projects.setDayTheme(state, day, input.value);
       scheduleSave();
     });
-  }
+
+    const row = document.getElementById(`day-${day}`);
+    const grip = row.querySelector('.day-grip');
+    grip.addEventListener('dragstart', (e) => {
+      dragFrom = index;
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    grip.addEventListener('dragend', () => {
+      dragFrom = -1;
+      row.classList.remove('drag-over');
+    });
+    row.addEventListener('dragover', (e) => {
+      if (dragFrom < 0) return;
+      e.preventDefault();
+      row.classList.add('drag-over');
+    });
+    row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+    row.addEventListener('drop', (e) => {
+      e.preventDefault();
+      row.classList.remove('drag-over');
+      if (dragFrom >= 0 && dragFrom !== index) {
+        projects.moveDayTheme(state, dragFrom, index);
+        scheduleSave();
+        renderWeek();
+      }
+      dragFrom = -1;
+    });
+  });
+}
+
+// Refresh the save-status dot when this window's tabs change.
+function bindTabWatch() {
+  const here = (winId) => String(winId) === windowId;
+  chrome.tabs.onCreated.addListener((tab) => {
+    if (here(tab.windowId)) renderSaveStatus();
+  });
+  chrome.tabs.onRemoved.addListener((id, info) => {
+    if (here(info.windowId)) renderSaveStatus();
+  });
+  chrome.tabs.onUpdated.addListener((id, change, tab) => {
+    if (change.url && here(tab.windowId)) renderSaveStatus();
+  });
+  chrome.tabs.onAttached.addListener((id, info) => {
+    if (here(info.newWindowId)) renderSaveStatus();
+  });
+  chrome.tabs.onDetached.addListener((id, info) => {
+    if (here(info.oldWindowId)) renderSaveStatus();
+  });
 }
 
 // --- Project combobox ------------------------------------------------------
@@ -343,41 +393,19 @@ async function archiveCurrent() {
 
 // --- Notes (per-project item list) -----------------------------------------
 
-// Reveal the inline add field (the "+" button collapses into a text input).
-function openAdd() {
+// The header "add note" icon creates a new empty note and edits it in place.
+function startNewNote() {
   if (!currentProject) return;
-  addingNote = true;
-  renderAddRow();
-  els.noteAddInput.focus();
-}
-
-function closeAdd() {
-  addingNote = false;
-  els.noteAddInput.value = '';
-  renderAddRow();
-}
-
-function onAddKey(event) {
-  if (event.key === 'Enter') {
-    event.preventDefault();
-    if (els.noteAddInput.value.trim() && currentProject) {
-      projects.addNote(state, currentProject, els.noteAddInput.value);
-      els.noteAddInput.value = '';
-      scheduleSave();
-      renderNotes(); // rebuilds only the list; the add field keeps focus
-    }
-  } else if (event.key === 'Escape') {
-    event.preventDefault();
-    closeAdd();
+  const project = projects.ensureProject(state, currentProject);
+  if (!Array.isArray(project.notes)) project.notes = [];
+  project.notes.push('');
+  editingNote = project.notes.length - 1;
+  renderNotes();
+  const input = document.getElementById('noteEditInput');
+  if (input) {
+    input.focus();
+    input.scrollIntoView({ block: 'nearest' });
   }
-}
-
-// The header "add note" icon opens the inline input; show/hide that input.
-function renderAddRow() {
-  const bound = currentProject !== null;
-  if (!bound) addingNote = false;
-  els.noteAddButton.disabled = !bound;
-  els.noteAddInput.hidden = !addingNote;
 }
 
 // Click a note to edit it in place.
@@ -400,7 +428,14 @@ function commitEdit(index, value) {
 }
 
 function cancelEdit() {
+  const index = editingNote;
   editingNote = -1;
+  // Discard a brand-new note that was never filled in.
+  const items = projects.getProject(state, currentProject).notes || [];
+  if (items[index] === '') {
+    projects.removeNote(state, currentProject, index);
+    scheduleSave();
+  }
   renderNotes();
 }
 
@@ -411,40 +446,40 @@ function tickNote(index) {
   renderNotes();
 }
 
-async function writeClipboard(text) {
+// Copy text to the clipboard and briefly confirm on the button.
+async function copyText(text, button) {
   try {
     await navigator.clipboard.writeText(text);
-    return true;
+    flash(button);
   } catch (error) {
     console.error(error);
-    return false;
   }
 }
 
-// Send a note: copy it to the clipboard (to paste into a chat) and remove it.
-async function sendNote(index, text) {
-  await writeClipboard(text);
-  projects.removeNote(state, currentProject, index);
-  scheduleSave();
-  renderNotes();
-}
-
-// Send all: copy every note (one per line) to the clipboard and clear the list.
-async function sendAllNotes() {
+// Copy all notes (one per line) without removing them.
+function copyAllNotes() {
   const items = projects.getProject(state, currentProject).notes || [];
   if (!items.length) return;
-  await writeClipboard(items.join('\n'));
-  projects.clearNotes(state, currentProject);
-  scheduleSave();
-  renderNotes();
+  copyText(items.join('\n'), els.copyAllButton);
 }
 
-// Complete all = clear the list without copying.
+// Complete all = clear the list.
 function completeAllNotes() {
   if (!currentProject) return;
   projects.clearNotes(state, currentProject);
   scheduleSave();
   renderNotes();
+}
+
+// Briefly flash a button green to confirm a copy.
+function flash(button) {
+  if (button.dataset.flashing) return;
+  button.dataset.flashing = '1';
+  button.classList.add('copied');
+  setTimeout(() => {
+    button.classList.remove('copied');
+    delete button.dataset.flashing;
+  }, FLASH_MS);
 }
 
 // --- Workspace -------------------------------------------------------------
@@ -460,7 +495,7 @@ async function saveProject() {
   state.projects[currentProject] = updated;
   projects.setWorkspaceWindow(state, currentProject, windowId);
   await storage.save(state);
-  renderWorkspace();
+  renderSaveStatus();
   renderRemoved();
 }
 
@@ -479,7 +514,7 @@ function renderAll({ preserveFocus = false } = {}) {
   renderNotes();
   renderWeek();
   renderScratchpad({ preserveFocus });
-  renderWorkspace();
+  renderSaveStatus();
   renderRemoved();
 }
 
@@ -512,8 +547,8 @@ function renderNotes() {
   const items = bound ? projects.getProject(state, currentProject).notes || [] : [];
 
   if (!bound) editingNote = -1;
-  renderAddRow();
-  els.sendAllButton.disabled = !items.length;
+  els.noteAddButton.disabled = !bound;
+  els.copyAllButton.disabled = !items.length;
   els.completeAllButton.disabled = !items.length;
 
   els.noteList.innerHTML = '';
@@ -556,15 +591,15 @@ function renderNotes() {
     label.title = 'Click to edit';
     label.addEventListener('click', () => startEdit(i));
 
-    const send = document.createElement('button');
-    send.type = 'button';
-    send.className = 'note-btn send';
-    send.title = 'Send to chat & remove';
-    send.setAttribute('aria-label', 'Send to chat and remove');
-    send.innerHTML = icon('M22 2 11 13', 'M22 2 15 22 11 13 2 9z');
-    send.addEventListener('click', () => sendNote(i, text));
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.className = 'note-btn copy';
+    copy.title = 'Copy';
+    copy.setAttribute('aria-label', 'Copy');
+    copy.innerHTML = icon('M9 9h11v11H9z', 'M5 15H4V4h11v1');
+    copy.addEventListener('click', () => copyText(text, copy));
 
-    item.append(tick, label, send);
+    item.append(tick, label, copy);
     els.noteList.appendChild(item);
   });
 }
@@ -592,15 +627,34 @@ function autoGrowScratch() {
   el.style.overflowY = el.scrollHeight > max ? 'auto' : 'hidden';
 }
 
-function renderWorkspace() {
-  if (!currentProject) {
-    els.lastSaved.textContent = '';
+// The save icon shows last-saved time on hover and a status dot: green when the
+// saved snapshot matches the window's current tabs, red when there are unsaved
+// changes (tabs differ, or never saved).
+async function renderSaveStatus() {
+  const bound = currentProject !== null;
+  const workspace = bound ? projects.getProject(state, currentProject).workspace : null;
+  els.saveProjectButton.title = !bound
+    ? 'Save project tabs'
+    : workspace
+    ? `Save project tabs — last saved ${new Date(workspace.savedAt).toLocaleString()}`
+    : 'Save project tabs — not saved yet';
+
+  if (!bound) {
+    els.saveProjectButton.classList.remove('is-clean', 'is-dirty');
     return;
   }
-  const workspace = projects.getProject(state, currentProject).workspace;
-  els.lastSaved.textContent = workspace
-    ? `Last saved ${new Date(workspace.savedAt).toLocaleString()}`
-    : 'Not saved yet';
+  const saved = await isWorkspaceSaved(workspace);
+  els.saveProjectButton.classList.toggle('is-clean', saved);
+  els.saveProjectButton.classList.toggle('is-dirty', !saved);
+}
+
+// True when the saved snapshot's reopenable URLs match the window's now.
+async function isWorkspaceSaved(workspace) {
+  if (!workspace || !workspace.tabs) return false;
+  const tabs = await chrome.tabs.query({ currentWindow: true });
+  const live = tabs.filter((t) => projects.isReopenable(t.url)).map((t) => t.url).sort();
+  const saved = workspace.tabs.map((t) => t.url).sort();
+  return live.length === saved.length && live.every((url, i) => url === saved[i]);
 }
 
 function renderRemoved() {

@@ -199,13 +199,7 @@ body {
   font-size: 12px;
 }
 
-/* Last-saved line, pinned at the bottom and aligned with the field text */
-.saved-line {
-  min-height: 14px;
-  padding: 0 12px;
-}
-
-/* Notes fill the top two-thirds as open space ready for items */
+/* Notes fill the remaining space as a scrolling list */
 .notes {
   flex: 1;
   min-height: 0;
@@ -214,40 +208,18 @@ body {
   gap: 6px;
 }
 
-/* Inline add field (revealed by the header "add note" icon) */
-.note-add {
-  display: flex;
-}
-
-.note-add-input {
-  flex: 1;
-}
-
 .note-edit-input {
   flex: 1;
   height: 28px;
   padding: 4px 8px;
 }
 
-/* Bulk actions as subtle text buttons */
+/* Bulk action icons, below the list */
 .note-toolbar {
   display: flex;
-  justify-content: flex-end;
   gap: 2px;
-}
-
-.note-toolbar button {
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  font-weight: 400;
-  padding: 4px 8px;
-  border-radius: 6px;
-}
-
-.note-toolbar button:hover:not(:disabled) {
-  background: var(--button-hover);
-  color: var(--text);
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
 }
 
 .note-list {
@@ -306,18 +278,56 @@ body {
   height: 14px;
 }
 
-/* Week theme strip (Mon–Thu): a quiet passive reminder */
+.note-btn.copied {
+  color: var(--ok);
+  opacity: 1;
+}
+
+/* Status dot on the save icon: green = saved, red = unsaved changes */
+#saveProjectButton {
+  position: relative;
+}
+
+#saveProjectButton::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 0 1.5px var(--bg);
+}
+
+#saveProjectButton.is-dirty::after {
+  background: var(--danger);
+}
+
+#saveProjectButton.is-clean::after {
+  background: var(--ok);
+}
+
+#saveProjectButton:disabled::after {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Week theme strip (Mon–Thu): two columns to save height */
 .week-strip {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  grid-auto-flow: column;
+  column-gap: 12px;
+  row-gap: 2px;
 }
 
 .day-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 1px 4px;
+  gap: 6px;
+  padding: 1px 2px;
   border-radius: 8px;
 }
 
@@ -330,9 +340,27 @@ body {
   font-weight: 600;
 }
 
+.day-row.drag-over {
+  outline: 2px dashed var(--border);
+  outline-offset: -2px;
+}
+
+.day-grip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  color: var(--muted);
+  opacity: 0.5;
+  cursor: grab;
+}
+
+.day-grip:active {
+  cursor: grabbing;
+}
+
 .day-label {
   flex: none;
-  width: 30px;
+  width: 26px;
   color: var(--muted);
   font-size: 12px;
 }
@@ -360,11 +388,27 @@ body {
   border-color: var(--border);
 }
 
-/* Removed tabs */
+/* Removed tabs: a soft box, no disclosure arrow */
 .removed > summary {
   cursor: pointer;
   color: var(--muted);
-  padding: 2px 0;
+  font-size: 12px;
+  list-style: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--button);
+}
+
+.removed > summary::-webkit-details-marker {
+  display: none;
+}
+
+.removed > summary::marker {
+  content: '';
+}
+
+.removed > summary:hover {
+  background: var(--button-hover);
 }
 
 .removed-list {

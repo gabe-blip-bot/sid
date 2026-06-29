@@ -117,6 +117,22 @@ export function setDayTheme(state, dayKey, text) {
   state.dayThemes[dayKey] = text;
 }
 
+// Reorder the theme values across the fixed Mon–Thu slots: move the theme at
+// `fromIndex` to `toIndex`, shifting the others (drag-to-shuffle).
+export function moveDayTheme(state, fromIndex, toIndex) {
+  const order = ['mon', 'tue', 'wed', 'thu'];
+  if (fromIndex < 0 || toIndex < 0 || fromIndex > 3 || toIndex > 3 || fromIndex === toIndex) {
+    return;
+  }
+  if (!state.dayThemes) state.dayThemes = { mon: '', tue: '', wed: '', thu: '' };
+  const values = order.map((k) => state.dayThemes[k] || '');
+  const [moved] = values.splice(fromIndex, 1);
+  values.splice(toIndex, 0, moved);
+  order.forEach((k, i) => {
+    state.dayThemes[k] = values[i];
+  });
+}
+
 // Point a window at a project, creating the project if it is new.
 export function attachWindow(state, windowId, name) {
   state.windows[windowId] = name;

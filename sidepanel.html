@@ -10,21 +10,45 @@
     <main class="app">
       <section class="week-strip" aria-label="Week themes">
         <div class="day-row" id="day-mon" data-day="mon">
+          <span class="day-grip" draggable="true" title="Drag to reorder" aria-label="Reorder Monday">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M5 9h14" /><path d="M5 15h14" />
+            </svg>
+          </span>
           <span class="day-label">Mon</span>
           <input id="theme-mon" class="day-theme" type="text" placeholder="Theme"
             autocomplete="off" aria-label="Monday theme" />
         </div>
         <div class="day-row" id="day-tue" data-day="tue">
+          <span class="day-grip" draggable="true" title="Drag to reorder" aria-label="Reorder Tuesday">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M5 9h14" /><path d="M5 15h14" />
+            </svg>
+          </span>
           <span class="day-label">Tue</span>
           <input id="theme-tue" class="day-theme" type="text" placeholder="Theme"
             autocomplete="off" aria-label="Tuesday theme" />
         </div>
         <div class="day-row" id="day-wed" data-day="wed">
+          <span class="day-grip" draggable="true" title="Drag to reorder" aria-label="Reorder Wednesday">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M5 9h14" /><path d="M5 15h14" />
+            </svg>
+          </span>
           <span class="day-label">Wed</span>
           <input id="theme-wed" class="day-theme" type="text" placeholder="Theme"
             autocomplete="off" aria-label="Wednesday theme" />
         </div>
         <div class="day-row" id="day-thu" data-day="thu">
+          <span class="day-grip" draggable="true" title="Drag to reorder" aria-label="Reorder Thursday">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M5 9h14" /><path d="M5 15h14" />
+            </svg>
+          </span>
           <span class="day-label">Thu</span>
           <input id="theme-thu" class="day-theme" type="text" placeholder="Theme"
             autocomplete="off" aria-label="Thursday theme" />
@@ -126,30 +150,28 @@
       </header>
 
       <section class="notes">
-        <div class="note-add">
-          <input
-            id="noteAddInput"
-            class="input note-add-input"
-            type="text"
-            placeholder="Add a window note"
-            autocomplete="off"
-            aria-label="Add a window note"
-            hidden
-          />
-        </div>
-        <div class="note-toolbar">
-          <button id="sendAllButton" class="small" type="button">Send all</button>
-          <button id="completeAllButton" class="small" type="button">Complete all</button>
-        </div>
         <ul id="noteList" class="note-list"></ul>
+        <div class="note-toolbar">
+          <button id="copyAllButton" class="note-btn" type="button" title="Copy all" aria-label="Copy all">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 9h11v11H9z" /><path d="M5 15H4V4h11v1" />
+            </svg>
+          </button>
+          <button id="completeAllButton" class="note-btn" type="button" title="Complete all" aria-label="Complete all">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 11l3 3L22 4" />
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+            </svg>
+          </button>
+        </div>
       </section>
 
       <details id="removedSection" class="removed" hidden>
         <summary id="removedSummary">Removed Tabs</summary>
         <ul id="removedList" class="removed-list"></ul>
       </details>
-
-      <span id="lastSaved" class="status saved-line"></span>
     </main>
 
     <script type="module" src="src/ui.js"></script>
