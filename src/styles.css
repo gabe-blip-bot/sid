@@ -119,17 +119,6 @@ body {
   gap: 8px;
 }
 
-.workspace-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.section-title {
-  font-weight: 600;
-}
-
 .workspace-actions {
   display: flex;
   gap: 8px;
@@ -212,6 +201,16 @@ button {
 
 button:hover {
   background: var(--button-hover);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.small {
+  padding: 6px 12px;
+  font-size: 12px;
 }
 
 .primary {

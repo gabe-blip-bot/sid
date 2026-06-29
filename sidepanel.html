@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Sid</title>
+    <title>Sidebar Sid</title>
     <link rel="stylesheet" href="src/styles.css" />
   </head>
   <body>
@@ -33,13 +33,10 @@
       </section>
 
       <section class="workspace">
-        <div class="workspace-head">
-          <span class="section-title">Workspace</span>
-          <span id="lastSaved" class="status">Not saved yet</span>
-        </div>
+        <span id="lastSaved" class="status">Not saved yet</span>
         <div class="workspace-actions">
-          <button id="saveProjectButton" class="primary" type="button">Save Project</button>
-          <button id="openProjectButton" type="button">Open Project</button>
+          <button id="saveProjectButton" class="primary small" type="button">Save Project</button>
+          <button id="openProjectButton" class="small" type="button">Open Project</button>
         </div>
       </section>
 
@@ -50,7 +47,6 @@
 
       <footer class="footer">
         <button id="exportButton" type="button">Export Markdown</button>
-        <span id="saveStatus" class="status">Loading</span>
       </footer>
     </main>
 
