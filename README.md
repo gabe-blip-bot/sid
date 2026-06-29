@@ -14,10 +14,11 @@ It is not a task manager, not a notes app, and not an AI assistant.
   switches to it (never merges). Three header icons act on the current project:
   **save** (capture this window's tabs), **pencil** (rename in place — Enter
   commits, Esc cancels), and **archive**.
-- **Notes** — a list of short items for the project. Type one and press Enter to
-  add it. Each item has a **copy** button (to paste into an LLM) and a **tick**
-  that completes and removes it. **Copy all** copies every item, one per line;
-  **Complete all** clears the list.
+- **Notes** — a list of short window notes for the project. Click **+ Add a
+  window note** to add one inline (Enter adds, and the field stays open for the
+  next). Click any note to edit it in place. Each item has a **copy** button (to
+  paste into an LLM) and a **tick** that completes and removes it. **Copy all**
+  copies every item, one per line; **Complete all** clears the list.
 - **Week strip** — a quiet Mon–Thu reminder of each working day's theme, sitting
   above the scratchpad. Each day has an editable theme field; it's global (not
   per project) and autosaves. Today's row is highlighted on Mon–Thu (nothing is

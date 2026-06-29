@@ -79,14 +79,25 @@
       </header>
 
       <section class="notes">
-        <input
-          id="noteInput"
-          class="input"
-          type="text"
-          placeholder="Add a note"
-          autocomplete="off"
-          aria-label="Add a note"
-        />
+        <div class="note-add">
+          <button id="noteAddButton" class="note-add-btn" type="button" aria-label="Add a window note">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 5v14" />
+              <path d="M5 12h14" />
+            </svg>
+            <span>Add a window note</span>
+          </button>
+          <input
+            id="noteAddInput"
+            class="input note-add-input"
+            type="text"
+            placeholder="Add a window note"
+            autocomplete="off"
+            aria-label="Add a window note"
+            hidden
+          />
+        </div>
         <div class="note-toolbar">
           <button id="copyAllButton" class="small" type="button">Copy all</button>
           <button id="completeAllButton" class="small" type="button">Complete all</button>
@@ -122,7 +133,7 @@
           id="scratchpadInput"
           class="textarea"
           rows="1"
-          placeholder="Scratchpad &mdash; shared across every window"
+          placeholder="Add a chrome note"
         ></textarea>
       </section>
 
