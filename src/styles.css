@@ -11,6 +11,7 @@
   --accent: #0b57d0;
   --accent-text: #ffffff;
   --danger: #c5221f;
+  --ok: #1e8e3e;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -26,6 +27,7 @@
     --accent: #a8c7fa;
     --accent-text: #062e6f;
     --danger: #f28b82;
+    --ok: #81c995;
   }
 }
 
@@ -192,16 +194,68 @@ body {
   font-size: 12px;
 }
 
-/* Workspace */
-.workspace {
+/* Last-saved line under the project bar */
+.saved-line {
+  min-height: 14px;
+}
+
+/* Notes: a list of copy/tick items */
+.notes {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.workspace-actions {
+.note-toolbar {
   display: flex;
   gap: 8px;
+}
+
+.note-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.note-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 8px;
+}
+
+.note-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.note-btn {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--button);
+  color: var(--muted);
+}
+
+.note-btn:hover {
+  background: var(--button-hover);
+  color: var(--text);
+}
+
+.note-btn.copied,
+.icon-button.copied {
+  color: var(--ok);
 }
 
 /* Removed tabs */
@@ -254,49 +308,6 @@ body {
   padding: 6px 12px;
 }
 
-/* Archived projects */
-.archived > summary {
-  cursor: pointer;
-  color: var(--muted);
-  padding: 2px 0;
-}
-
-.archived-list {
-  list-style: none;
-  margin: 8px 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.archived-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 8px 10px;
-}
-
-.archived-name {
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.archived-actions {
-  display: flex;
-  gap: 6px;
-  flex: none;
-}
-
-.danger {
-  color: var(--danger);
-}
-
 .status {
   color: var(--muted);
   font-size: 12px;
@@ -325,15 +336,4 @@ button:disabled {
 .small {
   padding: 6px 12px;
   font-size: 12px;
-}
-
-.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-text);
-}
-
-.primary:hover {
-  background: var(--accent);
-  filter: brightness(0.95);
 }
