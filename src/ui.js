@@ -18,7 +18,8 @@ const els = {
   renameButton: document.getElementById('renameButton'),
   archiveButton: document.getElementById('archiveButton'),
   lastSaved: document.getElementById('lastSaved'),
-  noteInput: document.getElementById('noteInput'),
+  noteAddButton: document.getElementById('noteAddButton'),
+  noteAddInput: document.getElementById('noteAddInput'),
   copyAllButton: document.getElementById('copyAllButton'),
   completeAllButton: document.getElementById('completeAllButton'),
   noteList: document.getElementById('noteList'),
@@ -32,6 +33,10 @@ let state = projects.emptyState();
 let windowId = null;
 let currentProject = null;
 let saveTimer = null;
+
+// Note add/edit state.
+let addingNote = false; // is the inline add field open
+let editingNote = -1; // index of the note being edited inline, or -1
 
 // Combobox state.
 let comboOpen = false;
@@ -101,12 +106,9 @@ function bindEvents() {
   els.renameInput.addEventListener('blur', exitRename);
   els.archiveButton.addEventListener('click', archiveCurrent);
 
-  els.noteInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addNoteFromInput();
-    }
-  });
+  els.noteAddButton.addEventListener('click', openAdd);
+  els.noteAddInput.addEventListener('keydown', onAddKey);
+  els.noteAddInput.addEventListener('blur', closeAdd);
   els.copyAllButton.addEventListener('click', copyAllNotes);
   els.completeAllButton.addEventListener('click', completeAllNotes);
 
@@ -342,12 +344,65 @@ async function archiveCurrent() {
 
 // --- Notes (per-project item list) -----------------------------------------
 
-function addNoteFromInput() {
-  const text = els.noteInput.value;
-  if (!text.trim() || !currentProject) return;
-  projects.addNote(state, currentProject, text);
-  els.noteInput.value = '';
+// Reveal the inline add field (the "+" button collapses into a text input).
+function openAdd() {
+  if (!currentProject) return;
+  addingNote = true;
+  renderAddRow();
+  els.noteAddInput.focus();
+}
+
+function closeAdd() {
+  addingNote = false;
+  els.noteAddInput.value = '';
+  renderAddRow();
+}
+
+function onAddKey(event) {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    if (els.noteAddInput.value.trim() && currentProject) {
+      projects.addNote(state, currentProject, els.noteAddInput.value);
+      els.noteAddInput.value = '';
+      scheduleSave();
+      renderNotes(); // rebuilds only the list; the add field keeps focus
+    }
+  } else if (event.key === 'Escape') {
+    event.preventDefault();
+    closeAdd();
+  }
+}
+
+// Swap between the "+" button and the inline input.
+function renderAddRow() {
+  const bound = currentProject !== null;
+  if (!bound) addingNote = false;
+  els.noteAddButton.disabled = !bound;
+  els.noteAddButton.hidden = addingNote;
+  els.noteAddInput.hidden = !addingNote;
+}
+
+// Click a note to edit it in place.
+function startEdit(index) {
+  editingNote = index;
+  renderNotes();
+  const input = document.getElementById('noteEditInput');
+  if (input) {
+    input.focus();
+    input.select();
+  }
+}
+
+function commitEdit(index, value) {
+  if (editingNote !== index) return; // already committed/cancelled
+  editingNote = -1;
+  projects.editNote(state, currentProject, index, value);
   scheduleSave();
+  renderNotes();
+}
+
+function cancelEdit() {
+  editingNote = -1;
   renderNotes();
 }
 
@@ -465,7 +520,8 @@ function renderNotes() {
   const bound = currentProject !== null;
   const items = bound ? projects.getProject(state, currentProject).notes || [] : [];
 
-  els.noteInput.disabled = !bound;
+  if (!bound) editingNote = -1;
+  renderAddRow();
   els.copyAllButton.disabled = !items.length;
   els.completeAllButton.disabled = !items.length;
 
@@ -473,6 +529,27 @@ function renderNotes() {
   items.forEach((text, i) => {
     const item = document.createElement('li');
     item.className = 'note-item';
+
+    if (i === editingNote) {
+      const input = document.createElement('input');
+      input.id = 'noteEditInput';
+      input.className = 'input note-edit-input';
+      input.type = 'text';
+      input.value = text;
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          commitEdit(i, input.value);
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          cancelEdit();
+        }
+      });
+      input.addEventListener('blur', () => commitEdit(i, input.value));
+      item.appendChild(input);
+      els.noteList.appendChild(item);
+      return;
+    }
 
     const tick = document.createElement('button');
     tick.type = 'button';
@@ -485,6 +562,8 @@ function renderNotes() {
     const label = document.createElement('span');
     label.className = 'note-text';
     label.textContent = text;
+    label.title = 'Click to edit';
+    label.addEventListener('click', () => startEdit(i));
 
     const copy = document.createElement('button');
     copy.type = 'button';
