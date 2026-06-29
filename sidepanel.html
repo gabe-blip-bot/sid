@@ -94,6 +94,21 @@
             </svg>
           </button>
           <button
+            id="noteAddButton"
+            class="icon-button"
+            type="button"
+            title="Add a window note"
+            aria-label="Add a window note"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <path d="M14 2v6h6" />
+              <path d="M12 18v-6" />
+              <path d="M9 15h6" />
+            </svg>
+          </button>
+          <button
             id="archiveButton"
             class="icon-button"
             type="button"
@@ -112,14 +127,6 @@
 
       <section class="notes">
         <div class="note-add">
-          <button id="noteAddButton" class="note-add-btn" type="button" aria-label="Add a window note">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M12 5v14" />
-              <path d="M5 12h14" />
-            </svg>
-            <span>Add a window note</span>
-          </button>
           <input
             id="noteAddInput"
             class="input note-add-input"
@@ -131,7 +138,7 @@
           />
         </div>
         <div class="note-toolbar">
-          <button id="copyAllButton" class="small" type="button">Copy all</button>
+          <button id="sendAllButton" class="small" type="button">Send all</button>
           <button id="completeAllButton" class="small" type="button">Complete all</button>
         </div>
         <ul id="noteList" class="note-list"></ul>
