@@ -9,15 +9,22 @@
   <body>
     <main class="app">
       <header class="topbar">
-        <select id="projectSwitch" class="select" aria-label="Switch project"></select>
-        <input
-          id="projectName"
-          class="input project"
-          type="text"
-          placeholder="Project name"
-          autocomplete="off"
-          aria-label="Project name"
-        />
+        <div class="combobox">
+          <input
+            id="projectInput"
+            class="input project"
+            type="text"
+            role="combobox"
+            aria-expanded="false"
+            aria-controls="projectListbox"
+            aria-autocomplete="list"
+            aria-haspopup="listbox"
+            autocomplete="off"
+            placeholder="Project"
+            aria-label="Project"
+          />
+          <ul id="projectListbox" class="listbox" role="listbox" hidden></ul>
+        </div>
       </header>
 
       <section class="field-group grow">

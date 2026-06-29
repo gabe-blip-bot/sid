@@ -69,7 +69,6 @@ body {
 }
 
 .input,
-.select,
 .textarea {
   width: 100%;
   border: 1px solid var(--border);
@@ -80,18 +79,9 @@ body {
   outline: none;
 }
 
-.input,
-.select {
-  height: 40px;
-}
-
 .input {
+  height: 40px;
   padding: 11px 12px;
-}
-
-.select {
-  padding: 0 10px;
-  cursor: pointer;
 }
 
 .project {
@@ -107,9 +97,62 @@ body {
 }
 
 .input:focus,
-.select:focus,
 .textarea:focus {
   border-color: var(--focus);
+}
+
+/* Project combobox */
+.combobox {
+  position: relative;
+}
+
+.listbox {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 10;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--field);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+
+.combo-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.combo-option.active {
+  background: var(--button-hover);
+}
+
+.combo-action {
+  color: var(--focus);
+}
+
+.badge {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.combo-hint {
+  padding: 6px 10px;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 /* Workspace */
