@@ -1,6 +1,6 @@
-# Sid
+# Sidebar Sid
 
-Sid is a lightweight browser context layer that lives in the Chrome side panel.
+Sidebar Sid is a lightweight browser context layer that lives in the Chrome side panel.
 
 It exists to answer one question immediately: **what was I working on?**
 

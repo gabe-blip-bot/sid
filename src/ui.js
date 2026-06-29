@@ -20,8 +20,7 @@ const els = {
   removedSection: document.getElementById('removedSection'),
   removedSummary: document.getElementById('removedSummary'),
   removedList: document.getElementById('removedList'),
-  exportButton: document.getElementById('exportButton'),
-  saveStatus: document.getElementById('saveStatus')
+  exportButton: document.getElementById('exportButton')
 };
 
 let state = projects.emptyState();
@@ -31,7 +30,6 @@ let saveTimer = null;
 
 init().catch((error) => {
   console.error(error);
-  setStatus('Error');
 });
 
 async function init() {
@@ -51,7 +49,6 @@ async function init() {
 
   renderAll();
   bindEvents();
-  setStatus('Saved');
 
   // Keep this panel in sync when another window edits the shared state.
   storage.onChange((incoming) => {
@@ -138,7 +135,6 @@ async function saveProject() {
   await storage.save(state);
   renderWorkspace();
   renderRemoved();
-  setStatus('Saved');
 }
 
 // Open the project's saved workspace. If the host window is still open, focus
@@ -147,7 +143,6 @@ async function openProject() {
   const hosted = projects.workspaceWindow(state, currentProject);
   if (hosted && (await isWindowOpen(hosted))) {
     await chrome.windows.update(Number(hosted), { focused: true });
-    setStatus(hosted === windowId ? 'Already open here' : 'Focused project window');
     return;
   }
 
@@ -156,10 +151,7 @@ async function openProject() {
     .map((t) => t.url)
     .filter(projects.isReopenable);
 
-  if (!urls.length) {
-    setStatus('Nothing saved to open');
-    return;
-  }
+  if (!urls.length) return;
 
   const win = await chrome.windows.create({ url: urls });
   projects.attachWindow(state, String(win.id), currentProject);
@@ -234,6 +226,8 @@ function renderWorkspace() {
   els.lastSaved.textContent = workspace
     ? `Last saved ${new Date(workspace.savedAt).toLocaleString()}`
     : 'Not saved yet';
+  // Nothing to reopen until the project has a snapshot.
+  els.openProjectButton.disabled = !(workspace && workspace.tabs && workspace.tabs.length);
 }
 
 function renderRemoved() {
@@ -275,16 +269,8 @@ function renderRemoved() {
 // --- Persistence & export --------------------------------------------------
 
 function scheduleSave() {
-  setStatus('Saving');
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(async () => {
-    await storage.save(state);
-    setStatus('Saved');
-  }, SAVE_DELAY);
-}
-
-function setStatus(text) {
-  els.saveStatus.textContent = text;
+  saveTimer = setTimeout(() => storage.save(state), SAVE_DELAY);
 }
 
 async function exportMarkdown() {
