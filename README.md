@@ -8,7 +8,12 @@ It is not a task manager, not a notes app, and not an AI assistant.
 
 ## How it works
 
-- Each Chrome window is attached to a project.
+- Each Chrome window is attached to a project. The Sid toolbar icon shows a short
+  badge tag for the focused window's project (initials or first letters), with the
+  full name in the icon's tooltip. (Chrome doesn't let extensions label the tab
+  bar itself, so the badge is the closest always-visible indicator.)
+- Top to bottom the panel is: the week strip, the scratchpad, then the project
+  bar, window notes, removed tabs, and the last-saved line.
 - The header is a single project combobox: click to see all projects, type to
   filter, and Enter on a new name creates it. Typing a name that already exists
   switches to it (never merges). Three header icons act on the current project:
