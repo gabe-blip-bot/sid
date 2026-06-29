@@ -46,18 +46,33 @@ async function init() {
   windowId = String(win.id);
 
   state = projects.normaliseState(await storage.load());
+
+  // A restart reassigns window IDs, so garbage-collect bindings for windows
+  // Chrome no longer has. Persist only if pruning actually removed something.
+  const sizeBefore = Object.keys(state.windows).length + Object.keys(state.openWindows).length;
+  const liveIds = new Set((await chrome.windows.getAll()).map((w) => String(w.id)));
+  projects.pruneWindows(state, liveIds);
+  let dirty =
+    Object.keys(state.windows).length + Object.keys(state.openWindows).length !== sizeBefore;
+
   currentProject = projects.windowProject(state, windowId);
 
-  // Every window always shows a project: keep its own, adopt an existing one,
-  // or create the first default.
-  if (!currentProject) {
-    currentProject = projects.projectNames(state)[0] || projects.newProjectName(state);
+  // First run only: seed one ready-to-use project so a fresh install isn't
+  // empty. Otherwise an unbound window stays neutral until the user picks or
+  // creates a project (never auto-grabbing the first one).
+  if (!currentProject && projects.projectNames(state).length === 0) {
+    currentProject = projects.newProjectName(state);
     projects.attachWindow(state, windowId, currentProject);
-    await storage.save(state);
+    dirty = true;
   }
+
+  if (dirty) await storage.save(state);
 
   renderAll();
   bindEvents();
+
+  // Neutral window: nudge the user toward picking or creating a project.
+  if (!currentProject) els.projectInput.focus();
 
   // Keep this panel in sync when another window edits the shared state.
   storage.onChange((incoming) => {
@@ -250,7 +265,9 @@ function ensureCurrentActive() {
   if (project && project.archived) projects.restoreProject(state, currentProject);
 }
 
-// Return the current project's record, creating one if somehow absent.
+// Return the current project's record, creating one if somehow absent. Only
+// reached from explicit actions (editing notes, Save, restore) — all disabled
+// while the window is unbound — so it never creates a project from a render.
 function activeProject() {
   if (!currentProject) {
     currentProject = projects.newProjectName(state);
@@ -263,6 +280,7 @@ function activeProject() {
 // --- Inline rename ---------------------------------------------------------
 
 function enterRename() {
+  if (!currentProject) return;
   closeCombo();
   els.comboWrap.hidden = true;
   els.renameInput.hidden = false;
@@ -397,18 +415,26 @@ function renderAll({ preserveFocus = false } = {}) {
 }
 
 function renderProjectInput() {
+  const bound = currentProject !== null;
+  els.renameButton.disabled = !bound;
+  els.archiveButton.disabled = !bound;
+  els.projectInput.placeholder = bound ? 'Project' : 'Pick or create a project';
   // Don't clobber what the user is typing into the open combobox.
   if (comboOpen && document.activeElement === els.projectInput) return;
-  els.projectInput.value = currentProject || '';
+  els.projectInput.value = bound ? currentProject : '';
 }
 
 // Push state into the text fields. Skip a field the user is actively typing in
-// so a remote update never yanks the cursor.
+// so a remote update never yanks the cursor. Notes are per-project, so they are
+// disabled while the window is unbound; the scratchpad is global and stays on.
 function renderFields({ preserveFocus = false } = {}) {
+  const bound = currentProject !== null;
   const project = projects.getProject(state, currentProject);
 
+  els.notesInput.disabled = !bound;
+  els.notesInput.placeholder = bound ? 'Notes' : 'Pick a project first';
   if (!(preserveFocus && document.activeElement === els.notesInput)) {
-    els.notesInput.value = project.notes || '';
+    els.notesInput.value = bound ? project.notes || '' : '';
   }
   if (!(preserveFocus && document.activeElement === els.scratchpadInput)) {
     els.scratchpadInput.value = state.scratchpad || '';
@@ -416,15 +442,26 @@ function renderFields({ preserveFocus = false } = {}) {
 }
 
 function renderWorkspace() {
+  if (!currentProject) {
+    els.lastSaved.textContent = '';
+    els.saveProjectButton.disabled = true;
+    els.openProjectButton.disabled = true;
+    return;
+  }
   const workspace = projects.getProject(state, currentProject).workspace;
   els.lastSaved.textContent = workspace
     ? `Last saved ${new Date(workspace.savedAt).toLocaleString()}`
     : 'Not saved yet';
+  els.saveProjectButton.disabled = false;
   // Nothing to reopen until the project has a snapshot.
   els.openProjectButton.disabled = !(workspace && workspace.tabs && workspace.tabs.length);
 }
 
 function renderRemoved() {
+  if (!currentProject) {
+    els.removedSection.hidden = true;
+    return;
+  }
   const removed = projects.getProject(state, currentProject).removedTabs || [];
   els.removedSection.hidden = removed.length === 0;
   els.removedSummary.textContent = `Removed Tabs (${removed.length})`;
@@ -461,6 +498,10 @@ function renderRemoved() {
 }
 
 function renderArchived() {
+  if (!currentProject) {
+    els.archivedSection.hidden = true;
+    return;
+  }
   const names = projects.archivedNames(state);
   els.archivedSection.hidden = names.length === 0;
   els.archivedSummary.textContent = `Archived projects (${names.length})`;

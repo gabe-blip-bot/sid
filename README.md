@@ -29,6 +29,11 @@ It is not a task manager, not a notes app, and not an AI assistant.
 - Switching windows switches to that window's project automatically.
 - Notes and scratchpad autosave to Chrome local storage with debounced writes.
   Saving a project writes immediately.
+- **Across a Chrome restart**, window IDs are reassigned, so Sid does not try to
+  restore window↔project bindings. On startup it prunes bindings for windows
+  that no longer exist, and each reopened window comes up **unbound** — prompting
+  you to pick or create a project — rather than all landing on the same one. A
+  fresh install with no projects still opens with one ready-to-use project.
 
 All data stays in Chrome local storage. No accounts, no network requests.
 
