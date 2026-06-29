@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sid</title>
+    <link rel="stylesheet" href="src/styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div class="brand">Sid</div>
+        <div class="meta"><span id="windowLabel">Window</span> · <span id="saveStatus">Loading</span></div>
+      </header>
+
+      <section class="field-group">
+        <input id="projectInput" class="input" type="text" list="projectList" placeholder="Project" autocomplete="off" />
+        <datalist id="projectList"></datalist>
+      </section>
+
+      <section class="field-group">
+        <input id="objectiveInput" class="input objective" type="text" placeholder="Current objective" autocomplete="off" />
+      </section>
+
+      <section class="field-group grow">
+        <textarea id="notesInput" class="textarea" placeholder="Notes"></textarea>
+      </section>
+
+      <section class="field-group scratchpad-wrap">
+        <textarea id="scratchpadInput" class="textarea scratchpad" placeholder="Scratchpad"></textarea>
+      </section>
+
+      <footer class="footer">
+        <button id="exportButton" type="button">Export Markdown</button>
+        <button id="connectDriveButton" type="button">Connect Drive</button>
+        <button id="saveDriveButton" type="button">Save Drive</button>
+      </footer>
+    </main>
+
+    <script type="module" src="src/ui.js"></script>
+  </body>
+</html>
