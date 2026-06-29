@@ -1,24 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Sid",
-  "version": "0.3.0",
-  "description": "Window and project context in a Chrome side panel.",
+  "version": "1.0.0",
+  "description": "A lightweight browser context layer. Answer: what was I working on?",
   "permissions": [
     "sidePanel",
     "storage",
-    "tabs",
-    "windows",
-    "identity"
+    "tabs"
   ],
-  "host_permissions": [
-    "https://www.googleapis.com/*"
-  ],
-  "oauth2": {
-    "client_id": "REPLACE_WITH_YOUR_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com",
-    "scopes": [
-      "https://www.googleapis.com/auth/drive.file"
-    ]
-  },
   "action": {
     "default_title": "Open Sid"
   },
@@ -28,13 +17,9 @@
   "side_panel": {
     "default_path": "sidepanel.html"
   },
-  "commands": {
-    "open-window-next": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+Y",
-        "mac": "Command+Shift+Y"
-      },
-      "description": "Open Sid side panel"
-    }
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   }
 }
