@@ -10,6 +10,7 @@
   --focus: #0b57d0;
   --accent: #0b57d0;
   --accent-text: #ffffff;
+  --danger: #c5221f;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -24,6 +25,7 @@
     --focus: #a8c7fa;
     --accent: #a8c7fa;
     --accent-text: #062e6f;
+    --danger: #f28b82;
   }
 }
 
@@ -101,9 +103,44 @@ body {
   border-color: var(--focus);
 }
 
-/* Project combobox */
+/* Project bar: combobox + rename/archive icons */
+.project-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .combobox {
   position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.rename-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.icon-button {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--button);
+  color: var(--muted);
+}
+
+.icon-button:hover {
+  background: var(--button-hover);
+  color: var(--text);
+}
+
+.icon-button svg {
+  display: block;
 }
 
 .listbox {
@@ -217,13 +254,47 @@ body {
   padding: 6px 12px;
 }
 
-/* Footer */
-.footer {
+/* Archived projects */
+.archived > summary {
+  cursor: pointer;
+  color: var(--muted);
+  padding: 2px 0;
+}
+
+.archived-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.archived-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding-top: 4px;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 10px;
+}
+
+.archived-name {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.archived-actions {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+
+.danger {
+  color: var(--danger);
 }
 
 .status {

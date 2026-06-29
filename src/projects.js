@@ -24,9 +24,18 @@ export function normaliseState(loaded) {
   return { ...emptyState(), ...(loaded || {}) };
 }
 
-// Project names, sorted for the switcher.
+// Active (non-archived) project names, sorted for the switcher.
 export function projectNames(state) {
-  return Object.keys(state.projects).sort((a, b) => a.localeCompare(b));
+  return Object.keys(state.projects)
+    .filter((name) => !state.projects[name].archived)
+    .sort((a, b) => a.localeCompare(b));
+}
+
+// Archived project names, sorted.
+export function archivedNames(state) {
+  return Object.keys(state.projects)
+    .filter((name) => state.projects[name].archived)
+    .sort((a, b) => a.localeCompare(b));
 }
 
 // Read a project's fields, falling back to empties for an unknown name.
@@ -72,6 +81,44 @@ export function renameProject(state, oldName, newName) {
   return newName;
 }
 
+// Move every window attached to `name` onto another active project: the first
+// active one alphabetically, or a fresh Untitled if none remain.
+function reassignWindows(state, name) {
+  const attached = Object.keys(state.windows).filter((w) => state.windows[w] === name);
+  if (!attached.length) return;
+
+  let target = projectNames(state).find((n) => n !== name);
+  if (!target) {
+    target = newProjectName(state);
+    ensureProject(state, target);
+  }
+  for (const win of attached) state.windows[win] = target;
+}
+
+// Archive a project: hide it from the switcher, move its windows to an active
+// project, and drop its workspace-host entry. Notes/workspace are kept.
+export function archiveProject(state, name) {
+  const project = state.projects[name];
+  if (!project) return;
+  project.archived = true;
+  reassignWindows(state, name);
+  if (state.openWindows) delete state.openWindows[name];
+}
+
+// Bring an archived project back into the switcher.
+export function restoreProject(state, name) {
+  if (state.projects[name]) delete state.projects[name].archived;
+}
+
+// Permanently delete a project, repointing its windows and clearing any
+// windows/openWindows entries that reference it.
+export function deleteProject(state, name) {
+  if (!state.projects[name]) return;
+  delete state.projects[name];
+  if (state.openWindows) delete state.openWindows[name];
+  reassignWindows(state, name);
+}
+
 // The window that currently hosts a project's workspace, or null. Set when the
 // project is saved or opened; used to focus rather than duplicate.
 export function workspaceWindow(state, name) {
@@ -98,11 +145,12 @@ export function normaliseName(value) {
 }
 
 // Decide what the project combobox should show for the typed text. Pure so the
-// select/create/rename logic can be tested without the DOM.
+// select/create logic can be tested without the DOM. Renaming is handled
+// separately (the header pencil), not through typed text.
 //   - resting (text empty or equal to current): list every project
 //   - typed an existing, non-current name: list it + an "already exists" hint
-//     (a switch, never a rename/merge)
-//   - typed a new name: a Create row, and a Rename row when it differs from current
+//     (a switch, never a merge)
+//   - typed a new name: a single Create row
 export function projectMenuRows(names, typedRaw, currentProject) {
   const typed = normaliseName(typedRaw);
   const lower = typed.toLowerCase();
@@ -119,9 +167,6 @@ export function projectMenuRows(names, typedRaw, currentProject) {
       rows.push({ kind: 'hint', text: `"${exact}" already exists` });
     } else {
       rows.push({ kind: 'create', name: typed });
-      if (currentProject && lower !== currentLower) {
-        rows.push({ kind: 'rename', name: typed });
-      }
     }
   }
   return { rows, exact };
