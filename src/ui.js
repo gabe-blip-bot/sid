@@ -4,13 +4,16 @@
 
 import * as storage from './storage.js';
 import * as projects from './projects.js';
-import { buildMarkdown, downloadMarkdown, fileName } from './export.js';
 
 const SAVE_DELAY = 400; // ms to debounce autosave writes
 
 const els = {
+  comboWrap: document.getElementById('comboWrap'),
   projectInput: document.getElementById('projectInput'),
   projectListbox: document.getElementById('projectListbox'),
+  renameInput: document.getElementById('renameInput'),
+  renameButton: document.getElementById('renameButton'),
+  archiveButton: document.getElementById('archiveButton'),
   notesInput: document.getElementById('notesInput'),
   scratchpadInput: document.getElementById('scratchpadInput'),
   lastSaved: document.getElementById('lastSaved'),
@@ -19,7 +22,9 @@ const els = {
   removedSection: document.getElementById('removedSection'),
   removedSummary: document.getElementById('removedSummary'),
   removedList: document.getElementById('removedList'),
-  exportButton: document.getElementById('exportButton')
+  archivedSection: document.getElementById('archivedSection'),
+  archivedSummary: document.getElementById('archivedSummary'),
+  archivedList: document.getElementById('archivedList')
 };
 
 let state = projects.emptyState();
@@ -29,7 +34,7 @@ let saveTimer = null;
 
 // Combobox state.
 let comboOpen = false;
-let comboRows = []; // [{ kind:'project'|'create'|'rename'|'hint', name?, text? }]
+let comboRows = []; // [{ kind:'project'|'create'|'hint', name?, text? }]
 let highlight = -1; // index into comboRows of the active row
 
 init().catch((error) => {
@@ -74,6 +79,11 @@ function bindEvents() {
   // Keep focus on the input when clicking a row, so blur doesn't pre-empt click.
   els.projectListbox.addEventListener('mousedown', (e) => e.preventDefault());
 
+  els.renameButton.addEventListener('click', enterRename);
+  els.renameInput.addEventListener('keydown', onRenameKey);
+  els.renameInput.addEventListener('blur', exitRename);
+  els.archiveButton.addEventListener('click', archiveCurrent);
+
   els.notesInput.addEventListener('input', () => {
     activeProject().notes = els.notesInput.value;
     scheduleSave();
@@ -86,7 +96,6 @@ function bindEvents() {
 
   els.saveProjectButton.addEventListener('click', saveProject);
   els.openProjectButton.addEventListener('click', openProject);
-  els.exportButton.addEventListener('click', exportMarkdown);
 }
 
 // --- Project combobox ------------------------------------------------------
@@ -169,9 +178,6 @@ function renderList() {
       } else if (row.kind === 'create') {
         li.classList.add('combo-action');
         li.textContent = `Create "${row.name}"`;
-      } else if (row.kind === 'rename') {
-        li.classList.add('combo-action');
-        li.textContent = `Rename "${currentProject}" → "${row.name}"`;
       }
       li.addEventListener('click', () => commitRow(row));
       li.addEventListener('mousemove', () => setHighlight(i));
@@ -216,7 +222,6 @@ function moveHighlight(delta) {
 
 function commitRow(row) {
   if (row.kind === 'project' || row.kind === 'create') gotoProject(row.name);
-  else if (row.kind === 'rename') renameCurrent(row.name);
 }
 
 // Switch to a project, creating it if the name is new.
@@ -228,18 +233,7 @@ function gotoProject(name) {
   }
   currentProject = clean;
   projects.attachWindow(state, windowId, clean);
-  commitProjectChange();
-}
-
-// Rename the current project. The combobox only offers this when `name` is free.
-function renameCurrent(name) {
-  const clean = projects.normaliseName(name);
-  if (!clean || !currentProject) {
-    closeCombo();
-    return;
-  }
-  currentProject = projects.renameProject(state, currentProject, clean);
-  projects.attachWindow(state, windowId, currentProject);
+  ensureCurrentActive();
   commitProjectChange();
 }
 
@@ -247,6 +241,13 @@ function commitProjectChange() {
   closeCombo();
   renderAll();
   scheduleSave();
+}
+
+// The current window must always show an active project. If a switch or rename
+// lands on a name that is archived, bring it back.
+function ensureCurrentActive() {
+  const project = state.projects[currentProject];
+  if (project && project.archived) projects.restoreProject(state, currentProject);
 }
 
 // Return the current project's record, creating one if somehow absent.
@@ -257,6 +258,73 @@ function activeProject() {
     renderAll();
   }
   return projects.ensureProject(state, currentProject);
+}
+
+// --- Inline rename ---------------------------------------------------------
+
+function enterRename() {
+  closeCombo();
+  els.comboWrap.hidden = true;
+  els.renameInput.hidden = false;
+  els.renameInput.value = currentProject || '';
+  els.renameInput.focus();
+  els.renameInput.select();
+}
+
+function exitRename() {
+  els.renameInput.hidden = true;
+  els.comboWrap.hidden = false;
+  renderProjectInput();
+}
+
+function onRenameKey(event) {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    commitRename();
+  } else if (event.key === 'Escape') {
+    event.preventDefault();
+    exitRename();
+  }
+}
+
+function commitRename() {
+  const clean = projects.normaliseName(els.renameInput.value);
+  if (clean && currentProject) {
+    // renameProject switches to an existing name rather than merging.
+    currentProject = projects.renameProject(state, currentProject, clean);
+    ensureCurrentActive();
+    projects.attachWindow(state, windowId, currentProject);
+    scheduleSave();
+  }
+  exitRename();
+  renderAll();
+}
+
+// --- Archive / restore / delete --------------------------------------------
+
+async function archiveCurrent() {
+  if (!currentProject) return;
+  projects.archiveProject(state, currentProject);
+  currentProject = projects.windowProject(state, windowId);
+  await storage.save(state);
+  renderAll();
+}
+
+async function restoreArchived(name) {
+  projects.restoreProject(state, name);
+  await storage.save(state);
+  renderAll();
+}
+
+async function deleteArchived(name) {
+  const confirmed = window.confirm(
+    `Delete "${name}" and its notes and saved tabs? This can't be undone.`
+  );
+  if (!confirmed) return;
+  projects.deleteProject(state, name);
+  currentProject = projects.windowProject(state, windowId) || currentProject;
+  await storage.save(state);
+  renderAll();
 }
 
 // --- Workspace -------------------------------------------------------------
@@ -325,6 +393,7 @@ function renderAll({ preserveFocus = false } = {}) {
   renderFields({ preserveFocus });
   renderWorkspace();
   renderRemoved();
+  renderArchived();
 }
 
 function renderProjectInput() {
@@ -391,23 +460,44 @@ function renderRemoved() {
   }
 }
 
-// --- Persistence & export --------------------------------------------------
+function renderArchived() {
+  const names = projects.archivedNames(state);
+  els.archivedSection.hidden = names.length === 0;
+  els.archivedSummary.textContent = `Archived projects (${names.length})`;
+
+  els.archivedList.innerHTML = '';
+  for (const name of names) {
+    const item = document.createElement('li');
+    item.className = 'archived-item';
+
+    const label = document.createElement('span');
+    label.className = 'archived-name';
+    label.textContent = name;
+
+    const actions = document.createElement('div');
+    actions.className = 'archived-actions';
+
+    const restore = document.createElement('button');
+    restore.type = 'button';
+    restore.className = 'small';
+    restore.textContent = 'Restore';
+    restore.addEventListener('click', () => restoreArchived(name));
+
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'small danger';
+    del.textContent = 'Delete';
+    del.addEventListener('click', () => deleteArchived(name));
+
+    actions.append(restore, del);
+    item.append(label, actions);
+    els.archivedList.appendChild(item);
+  }
+}
+
+// --- Persistence -----------------------------------------------------------
 
 function scheduleSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => storage.save(state), SAVE_DELAY);
-}
-
-async function exportMarkdown() {
-  const liveTabs = await chrome.tabs.query({ currentWindow: true });
-  const project = projects.getProject(state, currentProject);
-  const markdown = buildMarkdown({
-    project: currentProject,
-    notes: project.notes,
-    scratchpad: state.scratchpad,
-    liveTabs: liveTabs.map((t) => ({ title: t.title, url: t.url })),
-    workspace: project.workspace,
-    removedTabs: project.removedTabs || []
-  });
-  downloadMarkdown(fileName(currentProject), markdown);
 }
