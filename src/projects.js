@@ -10,12 +10,13 @@
 //         removedTabs: [{ title, url, removedAt, lastSeenAt }]       // optional
 //       }
 //     },
-//     scratchpad: string,                     // shared across every window
-//     windows:    { [windowId]: projectName } // which project each window shows
+//     scratchpad:  string,                     // shared across every window
+//     windows:     { [windowId]: projectName }, // which project each window shows
+//     openWindows: { [projectName]: windowId }  // window hosting a project's workspace
 //   }
 
 export function emptyState() {
-  return { projects: {}, scratchpad: '', windows: {} };
+  return { projects: {}, scratchpad: '', windows: {}, openWindows: {} };
 }
 
 // Merge a loaded blob onto a fresh state so missing fields are always present.
@@ -64,7 +65,23 @@ export function renameProject(state, oldName, newName) {
   for (const win of Object.keys(state.windows)) {
     if (state.windows[win] === oldName) state.windows[win] = newName;
   }
+  if (state.openWindows && oldName in state.openWindows) {
+    state.openWindows[newName] = state.openWindows[oldName];
+    delete state.openWindows[oldName];
+  }
   return newName;
+}
+
+// The window that currently hosts a project's workspace, or null. Set when the
+// project is saved or opened; used to focus rather than duplicate.
+export function workspaceWindow(state, name) {
+  const id = state.openWindows ? state.openWindows[name] : null;
+  return id != null ? String(id) : null;
+}
+
+export function setWorkspaceWindow(state, name, windowId) {
+  if (!state.openWindows) state.openWindows = {};
+  state.openWindows[name] = String(windowId);
 }
 
 // An unused default name: "Untitled", then "Untitled 2", "Untitled 3"...
