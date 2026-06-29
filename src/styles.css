@@ -214,26 +214,9 @@ body {
   gap: 6px;
 }
 
-/* Inline "+ Add a window note" affordance */
+/* Inline add field (revealed by the header "add note" icon) */
 .note-add {
   display: flex;
-}
-
-.note-add-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  font-weight: 400;
-  padding: 5px 6px;
-  border-radius: 6px;
-}
-
-.note-add-btn:hover:not(:disabled) {
-  background: var(--button-hover);
-  color: var(--text);
 }
 
 .note-add-input {
@@ -321,12 +304,6 @@ body {
 .note-btn svg {
   width: 14px;
   height: 14px;
-}
-
-.note-btn.copied,
-.icon-button.copied {
-  color: var(--ok);
-  opacity: 1;
 }
 
 /* Week theme strip (Mon–Thu): a quiet passive reminder */

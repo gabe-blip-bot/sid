@@ -6,7 +6,6 @@ import * as storage from './storage.js';
 import * as projects from './projects.js';
 
 const SAVE_DELAY = 400; // ms to debounce autosave writes
-const FLASH_MS = 900; // how long a "Copied" confirmation shows
 const DAYS = ['mon', 'tue', 'wed', 'thu']; // working days in the week strip
 
 const els = {
@@ -20,7 +19,7 @@ const els = {
   lastSaved: document.getElementById('lastSaved'),
   noteAddButton: document.getElementById('noteAddButton'),
   noteAddInput: document.getElementById('noteAddInput'),
-  copyAllButton: document.getElementById('copyAllButton'),
+  sendAllButton: document.getElementById('sendAllButton'),
   completeAllButton: document.getElementById('completeAllButton'),
   noteList: document.getElementById('noteList'),
   scratchpadInput: document.getElementById('scratchpadInput'),
@@ -109,7 +108,7 @@ function bindEvents() {
   els.noteAddButton.addEventListener('click', openAdd);
   els.noteAddInput.addEventListener('keydown', onAddKey);
   els.noteAddInput.addEventListener('blur', closeAdd);
-  els.copyAllButton.addEventListener('click', copyAllNotes);
+  els.sendAllButton.addEventListener('click', sendAllNotes);
   els.completeAllButton.addEventListener('click', completeAllNotes);
 
   els.scratchpadInput.addEventListener('input', () => {
@@ -373,12 +372,11 @@ function onAddKey(event) {
   }
 }
 
-// Swap between the "+" button and the inline input.
+// The header "add note" icon opens the inline input; show/hide that input.
 function renderAddRow() {
   const bound = currentProject !== null;
   if (!bound) addingNote = false;
   els.noteAddButton.disabled = !bound;
-  els.noteAddButton.hidden = addingNote;
   els.noteAddInput.hidden = !addingNote;
 }
 
@@ -413,47 +411,40 @@ function tickNote(index) {
   renderNotes();
 }
 
-async function copyText(text, button) {
+async function writeClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
-    flash(button);
+    return true;
   } catch (error) {
     console.error(error);
+    return false;
   }
 }
 
-function copyAllNotes() {
-  const items = projects.getProject(state, currentProject).notes || [];
-  if (!items.length) return;
-  copyText(items.join('\n'), els.copyAllButton);
+// Send a note: copy it to the clipboard (to paste into a chat) and remove it.
+async function sendNote(index, text) {
+  await writeClipboard(text);
+  projects.removeNote(state, currentProject, index);
+  scheduleSave();
+  renderNotes();
 }
 
-// Complete all = clear the list.
-function completeAllNotes() {
-  if (!currentProject) return;
+// Send all: copy every note (one per line) to the clipboard and clear the list.
+async function sendAllNotes() {
+  const items = projects.getProject(state, currentProject).notes || [];
+  if (!items.length) return;
+  await writeClipboard(items.join('\n'));
   projects.clearNotes(state, currentProject);
   scheduleSave();
   renderNotes();
 }
 
-// Briefly confirm a copy: text buttons show "Copied", icon buttons flash green.
-function flash(button) {
-  if (button.dataset.flashing) return;
-  button.dataset.flashing = '1';
-  if (button.classList.contains('small')) {
-    const label = button.textContent;
-    button.textContent = 'Copied';
-    setTimeout(() => {
-      button.textContent = label;
-      delete button.dataset.flashing;
-    }, FLASH_MS);
-  } else {
-    button.classList.add('copied');
-    setTimeout(() => {
-      button.classList.remove('copied');
-      delete button.dataset.flashing;
-    }, FLASH_MS);
-  }
+// Complete all = clear the list without copying.
+function completeAllNotes() {
+  if (!currentProject) return;
+  projects.clearNotes(state, currentProject);
+  scheduleSave();
+  renderNotes();
 }
 
 // --- Workspace -------------------------------------------------------------
@@ -522,7 +513,7 @@ function renderNotes() {
 
   if (!bound) editingNote = -1;
   renderAddRow();
-  els.copyAllButton.disabled = !items.length;
+  els.sendAllButton.disabled = !items.length;
   els.completeAllButton.disabled = !items.length;
 
   els.noteList.innerHTML = '';
@@ -565,15 +556,15 @@ function renderNotes() {
     label.title = 'Click to edit';
     label.addEventListener('click', () => startEdit(i));
 
-    const copy = document.createElement('button');
-    copy.type = 'button';
-    copy.className = 'note-btn copy';
-    copy.title = 'Copy';
-    copy.setAttribute('aria-label', 'Copy');
-    copy.innerHTML = icon('M9 9h11v11H9z', 'M5 15H4V4h11v1');
-    copy.addEventListener('click', () => copyText(text, copy));
+    const send = document.createElement('button');
+    send.type = 'button';
+    send.className = 'note-btn send';
+    send.title = 'Send to chat & remove';
+    send.setAttribute('aria-label', 'Send to chat and remove');
+    send.innerHTML = icon('M22 2 11 13', 'M22 2 15 22 11 13 2 9z');
+    send.addEventListener('click', () => sendNote(i, text));
 
-    item.append(tick, label, copy);
+    item.append(tick, label, send);
     els.noteList.appendChild(item);
   });
 }
