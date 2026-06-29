@@ -69,7 +69,7 @@ body {
 
 .grow {
   flex: 1;
-  min-height: 110px;
+  min-height: 0;
 }
 
 .input,
@@ -77,7 +77,7 @@ body {
   width: 100%;
   border: 1px solid transparent;
   border-radius: 10px;
-  background: transparent;
+  background: var(--button);
   color: var(--text);
   font: inherit;
   outline: none;
@@ -102,7 +102,7 @@ body {
 
 .input:hover,
 .textarea:hover {
-  background: var(--button);
+  background: var(--button-hover);
 }
 
 .input:focus,
@@ -203,13 +203,16 @@ body {
   font-size: 12px;
 }
 
-/* Last-saved line under the project bar */
+/* Last-saved line, pinned at the bottom and aligned with the field text */
 .saved-line {
   min-height: 14px;
+  padding: 0 12px;
 }
 
-/* Notes: a light text list with inline action buttons */
+/* Notes fill the top two-thirds as open space ready for items */
 .notes {
+  flex: 2;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -240,6 +243,9 @@ body {
   list-style: none;
   margin: 0;
   padding: 0;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .note-item {
