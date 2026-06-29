@@ -199,63 +199,90 @@ body {
   min-height: 14px;
 }
 
-/* Notes: a list of copy/tick items */
+/* Notes: a light text list with inline action buttons */
 .notes {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
+/* Bulk actions as subtle text buttons */
 .note-toolbar {
   display: flex;
-  gap: 8px;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.note-toolbar button {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 400;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.note-toolbar button:hover:not(:disabled) {
+  background: var(--button-hover);
+  color: var(--text);
 }
 
 .note-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
 
 .note-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 6px 8px;
+  gap: 2px;
+  padding: 2px 0;
+  line-height: 1.4;
+}
+
+.note-item + .note-item {
+  border-top: 1px solid var(--border);
 }
 
 .note-text {
   flex: 1;
   min-width: 0;
+  padding: 2px 4px 2px 2px;
   overflow-wrap: anywhere;
 }
 
+/* Ghost icon buttons that sit quietly until hovered */
 .note-btn {
   flex: none;
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  background: var(--button);
+  border: none;
+  border-radius: 6px;
+  background: transparent;
   color: var(--muted);
+  opacity: 0.7;
 }
 
 .note-btn:hover {
   background: var(--button-hover);
   color: var(--text);
+  opacity: 1;
+}
+
+.note-btn svg {
+  width: 14px;
+  height: 14px;
 }
 
 .note-btn.copied,
 .icon-button.copied {
   color: var(--ok);
+  opacity: 1;
 }
 
 /* Removed tabs */
