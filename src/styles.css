@@ -214,6 +214,38 @@ body {
   gap: 6px;
 }
 
+/* Inline "+ Add a window note" affordance */
+.note-add {
+  display: flex;
+}
+
+.note-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 400;
+  padding: 5px 6px;
+  border-radius: 6px;
+}
+
+.note-add-btn:hover:not(:disabled) {
+  background: var(--button-hover);
+  color: var(--text);
+}
+
+.note-add-input {
+  flex: 1;
+}
+
+.note-edit-input {
+  flex: 1;
+  height: 28px;
+  padding: 4px 8px;
+}
+
 /* Bulk actions as subtle text buttons */
 .note-toolbar {
   display: flex;
@@ -261,6 +293,7 @@ body {
   min-width: 0;
   padding: 2px 4px 2px 2px;
   overflow-wrap: anywhere;
+  cursor: text;
 }
 
 /* Ghost icon buttons that sit quietly until hovered */

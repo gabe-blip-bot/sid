@@ -95,6 +95,16 @@ export function removeNote(state, name, index) {
   if (project && Array.isArray(project.notes)) project.notes.splice(index, 1);
 }
 
+// Replace the item at `index`; if the new text is blank, remove it instead.
+export function editNote(state, name, index, text) {
+  const project = state.projects[name];
+  if (!project || !Array.isArray(project.notes)) return;
+  if (index < 0 || index >= project.notes.length) return;
+  const trimmed = text.trim();
+  if (trimmed === '') project.notes.splice(index, 1);
+  else project.notes[index] = trimmed;
+}
+
 // Clear every item (used by "Complete all").
 export function clearNotes(state, name) {
   const project = state.projects[name];
