@@ -19,9 +19,28 @@ export function emptyState() {
   return { projects: {}, scratchpad: '', windows: {}, openWindows: {} };
 }
 
-// Merge a loaded blob onto a fresh state so missing fields are always present.
+// Merge a loaded blob onto a fresh state so missing fields are always present,
+// and migrate each project's notes to a list of item strings.
 export function normaliseState(loaded) {
-  return { ...emptyState(), ...(loaded || {}) };
+  const state = { ...emptyState(), ...(loaded || {}) };
+  for (const name of Object.keys(state.projects)) {
+    state.projects[name].notes = toNoteList(state.projects[name].notes);
+  }
+  return state;
+}
+
+// Coerce any historical notes shape into an array of non-empty strings:
+// a legacy multiline string becomes one item per line.
+function toNoteList(notes) {
+  if (Array.isArray(notes)) {
+    return notes
+      .map((n) => (typeof n === 'string' ? n : (n && n.text) || ''))
+      .filter((t) => t.trim() !== '');
+  }
+  if (typeof notes === 'string') {
+    return notes.split('\n').map((l) => l.trim()).filter((l) => l !== '');
+  }
+  return [];
 }
 
 // Active (non-archived) project names, sorted for the switcher.
@@ -40,15 +59,38 @@ export function archivedNames(state) {
 
 // Read a project's fields, falling back to empties for an unknown name.
 export function getProject(state, name) {
-  return state.projects[name] || { notes: '' };
+  return state.projects[name] || { notes: [] };
 }
 
 // Create the project record if it does not exist yet, then return it.
 export function ensureProject(state, name) {
   if (!state.projects[name]) {
-    state.projects[name] = { notes: '' };
+    state.projects[name] = { notes: [] };
   }
   return state.projects[name];
+}
+
+// --- Notes (a per-project list of short items) -----------------------------
+
+// Append a note item; ignores blank text.
+export function addNote(state, name, text) {
+  const item = text.trim();
+  if (!item) return;
+  const project = ensureProject(state, name);
+  if (!Array.isArray(project.notes)) project.notes = [];
+  project.notes.push(item);
+}
+
+// Remove the item at `index` (used when an item is ticked complete).
+export function removeNote(state, name, index) {
+  const project = state.projects[name];
+  if (project && Array.isArray(project.notes)) project.notes.splice(index, 1);
+}
+
+// Clear every item (used by "Complete all").
+export function clearNotes(state, name) {
+  const project = state.projects[name];
+  if (project) project.notes = [];
 }
 
 // Point a window at a project, creating the project if it is new.
@@ -85,7 +127,7 @@ export function renameProject(state, oldName, newName) {
   if (!oldName || !newName || newName === oldName) return oldName;
   if (state.projects[newName]) return newName;
 
-  state.projects[newName] = state.projects[oldName] || { notes: '' };
+  state.projects[newName] = state.projects[oldName] || { notes: [] };
   delete state.projects[oldName];
   for (const win of Object.keys(state.windows)) {
     if (state.windows[win] === oldName) state.windows[win] = newName;

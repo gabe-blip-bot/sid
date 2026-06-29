@@ -11,21 +11,24 @@ It is not a task manager, not a notes app, and not an AI assistant.
 - Each Chrome window is attached to a project.
 - The header is a single project combobox: click to see all projects, type to
   filter, and Enter on a new name creates it. Typing a name that already exists
-  switches to it (never merges). The **pencil** icon renames the current project
-  in place (Enter commits, Esc cancels); the **archive** icon archives it.
-- **Notes** — multiline, belongs to the project.
-- **Scratchpad** — multiline, shared across every window.
-- **Workspace** — **Save Project** captures the current window's reopenable tabs
-  (title + URL, in order) with a timestamp as the project's snapshot. **Open
-  Project** reopens that snapshot in a window and attaches it to the project,
-  focusing an existing project window if one is already open.
+  switches to it (never merges). Three header icons act on the current project:
+  **save** (capture this window's tabs), **pencil** (rename in place — Enter
+  commits, Esc cancels), and **archive**.
+- **Notes** — a list of short items for the project. Type one and press Enter to
+  add it. Each item has a **copy** button (to paste into an LLM) and a **tick**
+  that completes and removes it. **Copy all** copies every item, one per line;
+  **Complete all** clears the list.
+- **Scratchpad** — multiline freeform text, shared across every window.
+- **Save** (header icon) captures the current window's reopenable tabs
+  (title + URL, in order) with a timestamp as the project's snapshot, and shows
+  "Last saved …" under the project bar.
 - **Removed Tabs** — when a save no longer contains a previously saved tab, it is
   archived here (by URL, deduped). **Restore** reopens it and clears it from the
   list. A tab that reappears in a later save leaves the archive automatically.
-- **Archived projects** — archiving hides a project from the switcher and moves
-  its window(s) to another active project; its notes and saved tabs are kept.
-  A collapsible list lets you **Restore** it or **Delete** it permanently
-  (confirmed). Delete is only available here, never on an active project.
+- **Archiving** a project hides it from the switcher and moves its window(s) to
+  another active project; its notes and saved tabs are kept. (Restoring and
+  deleting archived projects will live on a separate surface, not the side
+  panel.)
 - Switching windows switches to that window's project automatically.
 - Notes and scratchpad autosave to Chrome local storage with debounced writes.
   Saving a project writes immediately.
