@@ -27,7 +27,7 @@ let saveTimer = null;
 
 init().catch((error) => {
   console.error(error);
-  setStatus('Error');
+  setStatus(`Error: ${getErrorMessage(error)}`);
 });
 
 async function init() {
@@ -185,23 +185,34 @@ function downloadText(filename, text) {
 async function connectDrive() {
   try {
     setStatus('Connecting Drive');
-    await chrome.identity.getAuthToken({ interactive: true });
+    await getDriveToken();
     setStatus('Drive connected');
   } catch (error) {
     console.error(error);
-    setStatus('Drive error');
+    setStatus(`Drive: ${getErrorMessage(error)}`);
   }
 }
 
 async function saveDrive() {
   // Placeholder for the full Drive API implementation. Local autosave remains active.
   try {
-    await chrome.identity.getAuthToken({ interactive: true });
+    await getDriveToken();
     setStatus('Drive ready');
   } catch (error) {
     console.error(error);
-    setStatus('Drive error');
+    setStatus(`Drive: ${getErrorMessage(error)}`);
   }
+}
+
+async function getDriveToken() {
+  return await chrome.identity.getAuthToken({ interactive: true });
+}
+
+function getErrorMessage(error) {
+  if (chrome.runtime.lastError?.message) return chrome.runtime.lastError.message;
+  if (error?.message) return error.message;
+  if (typeof error === 'string') return error;
+  return 'Unknown error';
 }
 
 function normaliseProjectName(value) {
