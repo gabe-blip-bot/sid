@@ -18,7 +18,13 @@ It is not a task manager, not a notes app, and not an AI assistant.
   add it. Each item has a **copy** button (to paste into an LLM) and a **tick**
   that completes and removes it. **Copy all** copies every item, one per line;
   **Complete all** clears the list.
-- **Scratchpad** — multiline freeform text, shared across every window.
+- **Week strip** — a quiet Mon–Thu reminder of each working day's theme, sitting
+  above the scratchpad. Each day has an editable theme field; it's global (not
+  per project) and autosaves. Today's row is highlighted on Mon–Thu (nothing is
+  highlighted on the weekend). Purely passive — no notifications or alarms.
+- **Scratchpad** — global freeform text, shared across every window. Starts as a
+  single line, auto-grows as you type (up to ~40% of the panel, then scrolls),
+  and has a drag grip to resize manually.
 - **Save** (header icon) captures the current window's reopenable tabs
   (title + URL, in order) with a timestamp as the project's snapshot, and shows
   "Last saved …" under the project bar.

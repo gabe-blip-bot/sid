@@ -16,13 +16,21 @@
 //   }
 
 export function emptyState() {
-  return { projects: {}, scratchpad: '', windows: {}, openWindows: {} };
+  return {
+    projects: {},
+    scratchpad: '',
+    windows: {},
+    openWindows: {},
+    dayThemes: { mon: '', tue: '', wed: '', thu: '' }
+  };
 }
 
 // Merge a loaded blob onto a fresh state so missing fields are always present,
 // and migrate each project's notes to a list of item strings.
 export function normaliseState(loaded) {
   const state = { ...emptyState(), ...(loaded || {}) };
+  // Ensure all four working-day keys exist so older saved state is upgraded.
+  state.dayThemes = { mon: '', tue: '', wed: '', thu: '', ...(state.dayThemes || {}) };
   for (const name of Object.keys(state.projects)) {
     state.projects[name].notes = toNoteList(state.projects[name].notes);
   }
@@ -91,6 +99,12 @@ export function removeNote(state, name, index) {
 export function clearNotes(state, name) {
   const project = state.projects[name];
   if (project) project.notes = [];
+}
+
+// Set a working-day theme (dayKey is one of mon|tue|wed|thu). Global.
+export function setDayTheme(state, dayKey, text) {
+  if (!state.dayThemes) state.dayThemes = { mon: '', tue: '', wed: '', thu: '' };
+  state.dayThemes[dayKey] = text;
 }
 
 // Point a window at a project, creating the project if it is new.

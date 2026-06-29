@@ -7,6 +7,7 @@ import * as projects from './projects.js';
 
 const SAVE_DELAY = 400; // ms to debounce autosave writes
 const FLASH_MS = 900; // how long a "Copied" confirmation shows
+const DAYS = ['mon', 'tue', 'wed', 'thu']; // working days in the week strip
 
 const els = {
   comboWrap: document.getElementById('comboWrap'),
@@ -111,8 +112,17 @@ function bindEvents() {
 
   els.scratchpadInput.addEventListener('input', () => {
     state.scratchpad = els.scratchpadInput.value;
+    autoGrowScratch();
     scheduleSave();
   });
+
+  for (const day of DAYS) {
+    const input = document.getElementById(`theme-${day}`);
+    input.addEventListener('input', () => {
+      projects.setDayTheme(state, day, input.value);
+      scheduleSave();
+    });
+  }
 }
 
 // --- Project combobox ------------------------------------------------------
@@ -421,9 +431,22 @@ async function restoreTab(url) {
 function renderAll({ preserveFocus = false } = {}) {
   renderProjectInput();
   renderNotes();
+  renderWeek();
   renderScratchpad({ preserveFocus });
   renderWorkspace();
   renderRemoved();
+}
+
+// Show each day's theme and highlight today's row (Mon–Thu only).
+function renderWeek() {
+  const todayKey = { 1: 'mon', 2: 'tue', 3: 'wed', 4: 'thu' }[new Date().getDay()];
+  for (const day of DAYS) {
+    const input = document.getElementById(`theme-${day}`);
+    if (document.activeElement !== input) {
+      input.value = (state.dayThemes && state.dayThemes[day]) || '';
+    }
+    document.getElementById(`day-${day}`).classList.toggle('is-today', day === todayKey);
+  }
 }
 
 function renderProjectInput() {
@@ -487,6 +510,16 @@ function renderScratchpad({ preserveFocus = false } = {}) {
   if (!(preserveFocus && document.activeElement === els.scratchpadInput)) {
     els.scratchpadInput.value = state.scratchpad || '';
   }
+  autoGrowScratch();
+}
+
+// Grow the scratchpad to fit its content, up to ~40% of the panel, then scroll.
+function autoGrowScratch() {
+  const el = els.scratchpadInput;
+  el.style.height = 'auto';
+  const max = Math.max(38, Math.round(window.innerHeight * 0.4));
+  el.style.height = `${Math.min(el.scrollHeight, max)}px`;
+  el.style.overflowY = el.scrollHeight > max ? 'auto' : 'hidden';
 }
 
 function renderWorkspace() {
