@@ -127,24 +127,27 @@ function activeProject() {
 // --- Workspace -------------------------------------------------------------
 
 // Capture this window's reopenable tabs as the project's workspace snapshot.
+// The saving window becomes the project's host window.
 async function saveProject() {
   const tabs = await chrome.tabs.query({ currentWindow: true });
   const reopenable = tabs.filter((t) => projects.isReopenable(t.url));
   const updated = projects.captureWorkspace(activeProject(), reopenable, Date.now());
 
   state.projects[currentProject] = updated;
+  projects.setWorkspaceWindow(state, currentProject, windowId);
   await storage.save(state);
   renderWorkspace();
   renderRemoved();
   setStatus('Saved');
 }
 
-// Open the saved workspace in a window and attach it to this project. If the
-// project already has another live window, focus that instead of duplicating.
+// Open the project's saved workspace. If the host window is still open, focus
+// it instead of duplicating; otherwise recreate the workspace in a new window.
 async function openProject() {
-  const existing = await otherWindowFor(currentProject);
-  if (existing != null) {
-    await chrome.windows.update(existing, { focused: true });
+  const hosted = projects.workspaceWindow(state, currentProject);
+  if (hosted && (await isWindowOpen(hosted))) {
+    await chrome.windows.update(Number(hosted), { focused: true });
+    setStatus(hosted === windowId ? 'Already open here' : 'Focused project window');
     return;
   }
 
@@ -160,6 +163,7 @@ async function openProject() {
 
   const win = await chrome.windows.create({ url: urls });
   projects.attachWindow(state, String(win.id), currentProject);
+  projects.setWorkspaceWindow(state, currentProject, win.id);
   await storage.save(state);
 
   // Best effort: Chrome only allows opening the panel within a live user
@@ -171,16 +175,9 @@ async function openProject() {
   }
 }
 
-// A still-open window attached to `name`, other than this one, or null.
-async function otherWindowFor(name) {
-  const candidates = Object.keys(state.windows).filter(
-    (id) => state.windows[id] === name && id !== windowId
-  );
-  if (!candidates.length) return null;
-
+async function isWindowOpen(id) {
   const open = new Set((await chrome.windows.getAll()).map((w) => String(w.id)));
-  const match = candidates.find((id) => open.has(id));
-  return match ? Number(match) : null;
+  return open.has(String(id));
 }
 
 // Reopen a removed tab in this window and drop it from the archive.
