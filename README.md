@@ -13,29 +13,28 @@ It is not a task manager, not a notes app, and not an AI assistant.
   full name in the icon's tooltip. (Chrome doesn't let extensions label the tab
   bar itself, so the badge is the closest always-visible indicator.)
 - Top to bottom the panel is: the week strip, the scratchpad, then the project
-  bar, window notes, removed tabs, and the last-saved line.
+  bar, window notes, and removed tabs.
 - The header is a single project combobox: click to see all projects, type to
   filter, and Enter on a new name creates it. Typing a name that already exists
-  switches to it (never merges). Three header icons act on the current project:
-  **save** (capture this window's tabs), **pencil** (rename in place — Enter
-  commits, Esc cancels), and **archive**.
+  switches to it (never merges). Header icons act on the current project:
+  **save** (capture this window's tabs), **pencil** (rename in place), **add a
+  window note**, and **archive**.
 - **Notes** — a list of short window notes for the project. The **add-note icon**
-  in the header (between rename and archive) opens an inline field (Enter adds,
-  and the field stays open for the next). Click any note to edit it in place.
-  Each item has a **send** button that copies it to the clipboard (to paste into
-  a chat) and removes it, and a **tick** that completes and removes it without
-  copying. **Send all** copies every item (one per line) and clears the list;
-  **Complete all** clears it without copying.
-- **Week strip** — a quiet Mon–Thu reminder of each working day's theme, sitting
-  above the scratchpad. Each day has an editable theme field; it's global (not
-  per project) and autosaves. Today's row is highlighted on Mon–Thu (nothing is
-  highlighted on the weekend). Purely passive — no notifications or alarms.
+  in the header creates a new note in the list, ready to type. Click any note to
+  edit it in place. Each item has a **tick** that completes and removes it and a
+  **copy** button. Below the list, **copy-all** and **complete-all** icons copy
+  every note (one per line) or clear the list.
+- **Week strip** — a quiet Mon–Thu reminder of each working day's theme, shown in
+  two columns (Mon/Tue, Wed/Thu) to save height. Each day has an editable theme
+  field; it's global (not per project) and autosaves. Drag a row by its grip to
+  reorder the themes. Today's row is highlighted on Mon–Thu. Purely passive.
 - **Scratchpad** — global freeform text, shared across every window. Starts as a
   single line, auto-grows as you type (up to ~40% of the panel, then scrolls),
   and has a drag grip to resize manually.
 - **Save** (header icon) captures the current window's reopenable tabs
-  (title + URL, in order) with a timestamp as the project's snapshot, and shows
-  "Last saved …" under the project bar.
+  (title + URL, in order) with a timestamp as the project's snapshot. Its status
+  dot is green when the snapshot matches the window's current tabs and red when
+  there are unsaved changes; hover the icon to see when it was last saved.
 - **Removed Tabs** — when a save no longer contains a previously saved tab, it is
   archived here (by URL, deduped). **Restore** reopens it and clears it from the
   list. A tab that reappears in a later save leaves the archive automatically.
