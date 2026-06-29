@@ -67,10 +67,6 @@ body {
   flex-direction: column;
 }
 
-.grow {
-  flex: 1;
-  min-height: 0;
-}
 
 .input,
 .textarea {
@@ -93,11 +89,11 @@ body {
 }
 
 .textarea {
-  flex: 1;
-  min-height: 90px;
-  resize: none;
+  min-height: 38px;
   line-height: 1.5;
-  padding: 11px 12px;
+  padding: 8px 12px;
+  resize: vertical;
+  overflow-y: hidden;
 }
 
 .input:hover,
@@ -211,7 +207,7 @@ body {
 
 /* Notes fill the top two-thirds as open space ready for items */
 .notes {
-  flex: 2;
+  flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -298,6 +294,60 @@ body {
 .icon-button.copied {
   color: var(--ok);
   opacity: 1;
+}
+
+/* Week theme strip (Mon–Thu): a quiet passive reminder */
+.week-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.day-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 1px 4px;
+  border-radius: 8px;
+}
+
+.day-row.is-today {
+  background: var(--button);
+}
+
+.day-row.is-today .day-label {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.day-label {
+  flex: none;
+  width: 30px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.day-theme {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+}
+
+.day-theme:hover {
+  background: var(--button-hover);
+}
+
+.day-theme:focus {
+  background: var(--button);
+  border-color: var(--border);
 }
 
 /* Removed tabs */
