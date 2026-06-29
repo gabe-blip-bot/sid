@@ -9,15 +9,16 @@ It is not a task manager, not a notes app, and not an AI assistant.
 ## How it works
 
 - Each Chrome window is attached to a project.
-- The header has a project selector (autocomplete existing projects, or type a
-  new name to create one), the window number, and the save status.
-- **Current objective** — a single bold line.
+- The header has a project switcher (a dropdown of existing projects, plus a
+  **+ New project** option) and an editable name field for renaming the current
+  project.
 - **Notes** — multiline, belongs to the project.
 - **Scratchpad** — multiline, shared across every window.
 - Switching windows switches to that window's project automatically.
-- Everything autosaves to Chrome local storage with debounced writes.
-- **Export Markdown** downloads the project, objective, notes, scratchpad, and
-  every open tab (title and URL) for the current window.
+- Everything autosaves to Chrome local storage with debounced writes; the save
+  status sits in the footer next to the export button.
+- **Export Markdown** downloads the project, notes, scratchpad, and every open
+  tab (title and URL) for the current window.
 
 All data stays in Chrome local storage. No accounts, no network requests.
 
