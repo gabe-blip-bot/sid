@@ -372,7 +372,7 @@ body {
   color: var(--muted);
 }
 
-/* Planner: two columns of plain text lists (schedule bulleted | tasks numbered) */
+/* Planner: two columns of plain text lists (schedule plain | tasks numbered) */
 .planner {
   display: grid;
   grid-template-columns: 1fr 2fr; /* schedule narrower, task/theme wider */
@@ -392,48 +392,58 @@ body {
   padding: 0;
 }
 
-.tile-list.numbered {
-  counter-reset: task;
-}
-
-/* A plain text line: single-click copies, double-click deletes. */
+/* A plain text line: single-click edits, double-click deletes. */
 .planner-item {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 2px 0;
   line-height: 1.65;
-  overflow-wrap: anywhere;
   cursor: pointer;
-  user-select: none;
 }
 
+.planner-num {
+  flex: none;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.planner-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Used by the new-tab page: copy-flash and completed-task strikethrough */
 .planner-item.copied {
   color: var(--ok);
 }
 
-/* Completed task: strikethrough in place (the only done indicator) */
 .planner-item.done {
   text-decoration: line-through;
   color: var(--muted);
 }
 
-.tile-list.bulleted .planner-item {
-  padding: 2px 0 2px 1.2em;
-  text-indent: -1.2em;
+/* Inline edit field: a borderless line that matches the text */
+.tile-edit {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  line-height: 1.65;
+  outline: none;
 }
 
-.tile-list.bulleted .planner-item::before {
-  content: '\2022\00a0'; /* "• " */
-  color: var(--muted);
+/* Drag-to-reorder (schedule) feedback */
+.planner-item.dragging {
+  opacity: 0.4;
 }
 
-.tile-list.numbered .planner-item {
-  counter-increment: task;
-  padding: 2px 0 2px 1.7em;
-  text-indent: -1.7em;
-}
-
-.tile-list.numbered .planner-item::before {
-  content: counter(task) '.\00a0';
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
+.planner-item.drag-over {
+  box-shadow: inset 0 2px 0 var(--focus);
 }
 
 /* Trailing add line: a plain line, not a box */

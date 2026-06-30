@@ -114,8 +114,19 @@ function renderColumn(listEl, items, key) {
   items.forEach((item, i) => {
     const li = document.createElement('li');
     li.className = 'planner-item';
-    li.textContent = item.text;
     if (isTasks && item.done) li.classList.add('done');
+
+    if (isTasks) {
+      const num = document.createElement('span');
+      num.className = 'planner-num';
+      num.textContent = `${i + 1}.`;
+      li.appendChild(num);
+    }
+    const text = document.createElement('span');
+    text.className = 'planner-text';
+    text.textContent = item.text;
+    li.appendChild(text);
+
     li.title = isTasks
       ? 'Click to complete, double-click to delete'
       : 'Click to copy, double-click to delete';
