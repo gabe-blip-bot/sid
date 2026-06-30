@@ -22,17 +22,18 @@ It is not a task manager, not a notes app, and not an AI assistant.
 - The header is a single project combobox: click to see all projects, type to
   filter, and Enter on a new name creates it. Typing a name that already exists
   switches to it (never merges). Header icons: **undo** (revert the last content
-  change in either panel), **save** (capture this window's tabs), **pencil**
-  (rename in place), and **archive**.
+  change in either panel), **copy-all** / **clear-all** notes, **save** (capture
+  this window's tabs), **pencil** (rename in place), and **archive**.
   The whole panel is styled like a plain written document — no tiles, boxes, or
   list buttons; you type straight onto lines.
 - **Notes** — a raw notepad that behaves like a small text editor. The bottom line
   is always an empty line you write on: **Enter** commits it (**Shift+Enter**
   inserts a newline); **Backspace** at the very start of the write-line pulls the
   previous line back in to edit it. Committed lines are plain text; **hover** a line
-  to reveal **copy** and **clear** buttons for it. Beneath the lowest line,
-  **copy-all** and **clear-all** icons copy every note (one per line) or empty the
-  list.
+  to reveal **copy** and **clear** buttons for it. The header's **copy-all** and
+  **clear-all** icons copy every note (one per line) or empty the list. Empty
+  inputs hint with `Notes…`, `Schedule…`, `Task…`, `Distractions…`, hidden once the
+  list has entries.
 - **Planner** — two global columns: a plain-text **schedule** (left, no bullets)
   and a numbered **task** list (right). Above the schedule sits today's **day and
   date**; above the tasks sits a **theme** line (a short global label, autosaved).
