@@ -70,6 +70,18 @@ It is not a task manager, not a notes app, and not an AI assistant.
 
 All data stays in Chrome local storage. No accounts, no network requests.
 
+## New tab page (preview)
+
+`newtab.html` is a standalone, full-page view of Sid's **global** surfaces — the
+day/date + theme header, the schedule and task lists, and distractions — laid out
+as a centered column for a wide page. It reads and writes the **same**
+`chrome.storage.local` state as the side panel (via `projects.js` / `storage.js`)
+and updates live, so edits in one show in the other. It does **not** override
+Chrome's new tab; open it manually at
+`chrome-extension://<extension-id>/newtab.html` (the id is on the Sid card at
+`chrome://extensions`). It's a first cut for evaluation — no project bar, notes,
+or tabs here.
+
 ## Install
 
 1. Open `chrome://extensions`.
