@@ -40,8 +40,8 @@ export function normaliseState(loaded) {
     loaded && loaded.distractions !== undefined ? loaded.distractions : loaded && loaded.scratchpad;
   state.distractions = toNoteList(rawDistractions);
   delete state.scratchpad;
-  state.schedule = toNoteList(state.schedule);
-  state.tasks = toNoteList(state.tasks);
+  state.schedule = toTileList(state.schedule);
+  state.tasks = toTileList(state.tasks);
   for (const name of Object.keys(state.projects)) {
     state.projects[name].notes = toNoteList(state.projects[name].notes);
   }
@@ -60,6 +60,25 @@ function toNoteList(notes) {
     return notes.split('\n').map((l) => l.trim()).filter((l) => l !== '');
   }
   return [];
+}
+
+// Coerce a schedule/task list into an array of { text, done } tiles. A legacy
+// string (or string item) becomes a tile with done: false.
+function toTileList(items) {
+  if (typeof items === 'string') {
+    return items
+      .split('\n')
+      .map((l) => ({ text: l.trim(), done: false }))
+      .filter((it) => it.text !== '');
+  }
+  if (!Array.isArray(items)) return [];
+  return items
+    .map((it) =>
+      typeof it === 'string'
+        ? { text: it.trim(), done: false }
+        : { text: ((it && it.text) || '').trim(), done: !!(it && it.done) }
+    )
+    .filter((it) => it.text !== '');
 }
 
 // Active (non-archived) project names, sorted for the switcher.
@@ -147,11 +166,26 @@ export function addToList(state, key, text) {
   const item = text.trim();
   if (!item) return;
   if (!Array.isArray(state[key])) state[key] = [];
-  state[key].push(item);
+  state[key].push({ text: item, done: false });
 }
 
 export function removeFromList(state, key, index) {
   if (Array.isArray(state[key])) state[key].splice(index, 1);
+}
+
+// Toggle a tile's done (strike-through) state.
+export function toggleListItem(state, key, index) {
+  const item = Array.isArray(state[key]) ? state[key][index] : null;
+  if (item) item.done = !item.done;
+}
+
+// Edit a tile's text; an empty result removes the tile.
+export function editListItem(state, key, index, text) {
+  const list = state[key];
+  if (!Array.isArray(list) || index < 0 || index >= list.length) return;
+  const trimmed = text.trim();
+  if (trimmed === '') list.splice(index, 1);
+  else list[index].text = trimmed;
 }
 
 // Point a window at a project, creating the project if it is new.

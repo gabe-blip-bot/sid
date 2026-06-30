@@ -31,8 +31,7 @@ const els = {
   removedSection: document.getElementById('removedSection'),
   removedSummary: document.getElementById('removedSummary'),
   removedList: document.getElementById('removedList'),
-  distractionInput: document.getElementById('distractionInput'),
-  distractionList: document.getElementById('distractionList')
+  distractionInput: document.getElementById('distractionInput')
 };
 
 let state = projects.emptyState();
@@ -43,6 +42,7 @@ let saveTimer = null;
 // Note edit + day-cycle state.
 let editingNote = -1; // index of the note being edited inline, or -1
 let cycleDay = 'mon'; // which day the theme control is showing
+let editingTile = null; // { key, index } of the planner tile being edited, or null
 
 // Combobox state.
 let comboOpen = false;
@@ -143,7 +143,7 @@ function bindEvents() {
     scheduleSave();
   });
 
-  // Distractions: a global quick-capture list. Enter saves and clears.
+  // Distractions: capture and clear; the box stays collapsed (no list shown).
   els.distractionInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -151,7 +151,6 @@ function bindEvents() {
         projects.addDistraction(state, els.distractionInput.value);
         els.distractionInput.value = '';
         scheduleSave();
-        renderDistractions();
       }
     }
   });
@@ -502,7 +501,6 @@ function renderAll() {
   renderPlanner();
   renderSaveStatus();
   renderRemoved();
-  renderDistractions();
 }
 
 // Add an item to a global list on Enter; the input stays as the next empty tile.
@@ -525,9 +523,18 @@ function renderPlanner() {
 
 function renderTileColumn(listEl, items, key, numbered) {
   listEl.innerHTML = '';
-  items.forEach((text, i) => {
+  items.forEach((item, i) => {
     const li = document.createElement('li');
-    li.className = 'planner-item';
+    li.className = `planner-item${item.done ? ' done' : ''}`;
+
+    const tick = document.createElement('button');
+    tick.type = 'button';
+    tick.className = 'note-btn tick';
+    tick.title = item.done ? 'Mark not done' : 'Complete';
+    tick.setAttribute('aria-label', tick.title);
+    tick.innerHTML = icon('M20 6 9 17l-5-5');
+    tick.addEventListener('click', () => toggleTile(key, i));
+    li.appendChild(tick);
 
     if (numbered) {
       const num = document.createElement('span');
@@ -536,26 +543,65 @@ function renderTileColumn(listEl, items, key, numbered) {
       li.appendChild(num);
     }
 
-    const label = document.createElement('span');
-    label.className = 'planner-text';
-    label.textContent = text;
-    li.appendChild(label);
-
-    const remove = document.createElement('button');
-    remove.type = 'button';
-    remove.className = 'note-btn';
-    remove.title = 'Remove';
-    remove.setAttribute('aria-label', 'Remove');
-    remove.innerHTML = icon('M20 6 9 17l-5-5');
-    remove.addEventListener('click', () => {
-      projects.removeFromList(state, key, i);
-      scheduleSave();
-      renderPlanner();
-    });
-    li.appendChild(remove);
+    if (editingTile && editingTile.key === key && editingTile.index === i) {
+      const input = document.createElement('textarea');
+      input.id = 'tileEditInput';
+      input.className = 'note-composer tile-edit';
+      input.rows = 1;
+      input.value = item.text;
+      input.addEventListener('input', () => autoGrow(input));
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          commitTileEdit(key, i, input.value);
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          cancelTileEdit();
+        }
+      });
+      input.addEventListener('blur', () => commitTileEdit(key, i, input.value));
+      li.appendChild(input);
+    } else {
+      const label = document.createElement('span');
+      label.className = 'planner-text';
+      label.textContent = item.text;
+      label.title = 'Click to edit';
+      label.addEventListener('click', () => startTileEdit(key, i));
+      li.appendChild(label);
+    }
 
     listEl.appendChild(li);
   });
+}
+
+function toggleTile(key, index) {
+  projects.toggleListItem(state, key, index);
+  scheduleSave();
+  renderPlanner();
+}
+
+function startTileEdit(key, index) {
+  editingTile = { key, index };
+  renderPlanner();
+  const input = document.getElementById('tileEditInput');
+  if (input) {
+    autoGrow(input);
+    input.focus();
+    input.select();
+  }
+}
+
+function commitTileEdit(key, index, value) {
+  if (!editingTile || editingTile.key !== key || editingTile.index !== index) return;
+  editingTile = null;
+  projects.editListItem(state, key, index, value);
+  scheduleSave();
+  renderPlanner();
+}
+
+function cancelTileEdit() {
+  editingTile = null;
+  renderPlanner();
 }
 
 // The day-cycle button shows the selected day; the field edits that day's theme.
@@ -567,35 +613,6 @@ function renderDayCycle() {
   if (document.activeElement !== els.dayThemeInput) {
     els.dayThemeInput.value = (state.dayThemes && state.dayThemes[cycleDay]) || '';
   }
-}
-
-// Distractions: a global write box with the captured items listed below it.
-function renderDistractions() {
-  const items = state.distractions || [];
-  els.distractionList.innerHTML = '';
-  items.forEach((text, i) => {
-    const item = document.createElement('li');
-    item.className = 'distraction-item';
-
-    const label = document.createElement('span');
-    label.className = 'distraction-text';
-    label.textContent = text;
-
-    const remove = document.createElement('button');
-    remove.type = 'button';
-    remove.className = 'note-btn';
-    remove.title = 'Remove';
-    remove.setAttribute('aria-label', 'Remove');
-    remove.innerHTML = icon('M20 6 9 17l-5-5');
-    remove.addEventListener('click', () => {
-      projects.removeDistraction(state, i);
-      scheduleSave();
-      renderDistractions();
-    });
-
-    item.append(label, remove);
-    els.distractionList.appendChild(item);
-  });
 }
 
 function renderProjectInput() {
