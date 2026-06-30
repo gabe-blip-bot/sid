@@ -17,13 +17,15 @@ It is not a task manager, not a notes app, and not an AI assistant.
 - The header is a single project combobox: click to see all projects, type to
   filter, and Enter on a new name creates it. Typing a name that already exists
   switches to it (never merges). Header icons act on the current project:
-  **save** (capture this window's tabs), **pencil** (rename in place), **add a
-  window note**, and **archive**.
-- **Notes** — a list of short window notes for the project. The **add-note icon**
-  in the header creates a new note in the list, ready to type (just a line and a
-  cursor). Click any note to edit it in place. Each item has a **tick** that
-  completes and removes it and a **copy** button. Below the list, **copy-all** and
-  **complete-all** icons copy every note (one per line) or clear the list.
+  **save** (capture this window's tabs), **pencil** (rename in place), and
+  **archive**.
+- **Notes** — a frictionless inline list of short window notes for the project.
+  An always-present empty row at the end is where you type: **Enter** commits the
+  line as a note (**Shift+Enter** inserts a newline) and the row clears, ready for
+  the next. Committed notes are plain text — **single-click** a note to copy it
+  (with a brief confirmation), **double-click** to delete it. Below the list,
+  **copy-all** and **complete-all** icons copy every note (one per line) or clear
+  the list.
 - **Day theme** — a button that cycles through the working days (Mon→Tue→Wed→Thu)
   with a theme field beside it. It's global (not per project) and autosaves; the
   button defaults to today and is highlighted when showing today. Purely passive.

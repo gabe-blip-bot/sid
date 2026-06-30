@@ -226,10 +226,6 @@ body {
   gap: 6px;
 }
 
-.note-edit-input {
-  flex: 1;
-}
-
 /* Bulk action icons, below the list */
 .note-toolbar {
   display: flex;
@@ -247,24 +243,34 @@ body {
   overflow-y: auto;
 }
 
+/* Committed note: plain text. Single-click copies, double-click deletes. */
 .note-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 2px;
-  padding: 1px 0;
+  padding: 5px 4px 5px 2px;
   line-height: 1.5;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  border-radius: 6px;
+  user-select: none;
+  transition: background 0.12s ease;
 }
 
-.note-item + .note-item {
+.note-item:hover {
+  background: var(--button-hover);
+}
+
+.note-item.copied {
+  background: var(--button-hover);
+  color: var(--ok);
+}
+
+.note-item + .note-item,
+.note-item + .note-compose-item {
   border-top: 1px solid var(--border);
 }
 
-.note-text {
-  flex: 1;
-  min-width: 0;
-  padding: 4px 4px 4px 2px;
-  overflow-wrap: anywhere;
-  cursor: text;
+/* The always-present compose row at the end of the list. */
+.note-compose-item {
+  padding: 1px 0;
 }
 
 /* Ghost icon buttons that sit quietly until hovered */

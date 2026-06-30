@@ -127,14 +127,17 @@
       </header>
 
       <section class="notes">
-        <textarea
-          id="noteComposer"
-          class="note-composer"
-          rows="1"
-          placeholder="Take a note"
-          aria-label="Take a note"
-        ></textarea>
-        <ul id="noteList" class="note-list"></ul>
+        <ul id="noteList" class="note-list">
+          <li id="noteComposeItem" class="note-compose-item">
+            <textarea
+              id="noteComposeRow"
+              class="note-composer"
+              rows="1"
+              placeholder="Take a note"
+              aria-label="Take a note"
+            ></textarea>
+          </li>
+        </ul>
         <div class="note-toolbar">
           <button id="copyAllButton" class="note-btn" type="button" title="Copy all" aria-label="Copy all">
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"

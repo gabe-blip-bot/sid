@@ -7,6 +7,7 @@ import * as projects from './projects.js';
 
 const SAVE_DELAY = 400; // ms to debounce autosave writes
 const FLASH_MS = 900; // how long a "Copied" confirmation shows
+const CLICK_DELAY = 220; // ms to wait for a second click before copying
 const DAYS = ['mon', 'tue', 'wed', 'thu']; // working days in the week strip
 
 const els = {
@@ -17,10 +18,11 @@ const els = {
   saveProjectButton: document.getElementById('saveProjectButton'),
   renameButton: document.getElementById('renameButton'),
   archiveButton: document.getElementById('archiveButton'),
-  noteComposer: document.getElementById('noteComposer'),
   copyAllButton: document.getElementById('copyAllButton'),
   completeAllButton: document.getElementById('completeAllButton'),
   noteList: document.getElementById('noteList'),
+  noteComposeItem: document.getElementById('noteComposeItem'),
+  noteComposeRow: document.getElementById('noteComposeRow'),
   dayCycleButton: document.getElementById('dayCycleButton'),
   dayThemeInput: document.getElementById('dayThemeInput'),
   scheduleList: document.getElementById('scheduleList'),
@@ -39,8 +41,7 @@ let windowId = null;
 let currentProject = null;
 let saveTimer = null;
 
-// Note edit + day-cycle state.
-let editingNote = -1; // index of the note being edited inline, or -1
+// Day-cycle + planner tile edit state.
 let cycleDay = 'mon'; // which day the theme control is showing
 let editingTile = null; // { key, index } of the planner tile being edited, or null
 
@@ -115,18 +116,12 @@ function bindEvents() {
   els.renameInput.addEventListener('blur', exitRename);
   els.archiveButton.addEventListener('click', archiveCurrent);
 
-  // Note taker: type freely (wrapping); Enter commits the line as a task.
-  els.noteComposer.addEventListener('input', () => autoGrow(els.noteComposer));
-  els.noteComposer.addEventListener('keydown', (e) => {
+  // Note compose row: type freely (wrapping); Enter commits, Shift+Enter newline.
+  els.noteComposeRow.addEventListener('input', () => autoGrow(els.noteComposeRow));
+  els.noteComposeRow.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (els.noteComposer.value.trim() && currentProject) {
-        projects.addNote(state, currentProject, els.noteComposer.value);
-        els.noteComposer.value = '';
-        autoGrow(els.noteComposer);
-        scheduleSave();
-        renderNotes();
-      }
+      commitCompose();
     }
   });
   els.copyAllButton.addEventListener('click', copyAllNotes);
@@ -399,39 +394,24 @@ async function archiveCurrent() {
 
 // --- Notes (per-project item list) -----------------------------------------
 
-// Click a note to edit it in place (in a wrapping textarea).
-function startEdit(index) {
-  editingNote = index;
-  renderNotes();
-  const input = document.getElementById('noteEditInput');
-  if (input) {
-    autoGrow(input);
-    input.focus();
-    input.select();
-  }
-}
-
-function commitEdit(index, value) {
-  if (editingNote !== index) return; // already committed/cancelled
-  editingNote = -1;
-  projects.editNote(state, currentProject, index, value);
+// Commit the compose row as a new note; keep focus so the next line is ready.
+function commitCompose() {
+  if (!els.noteComposeRow.value.trim() || !currentProject) return;
+  projects.addNote(state, currentProject, els.noteComposeRow.value);
+  els.noteComposeRow.value = '';
+  autoGrow(els.noteComposeRow);
   scheduleSave();
-  renderNotes();
+  renderNotes(); // rebuilds committed rows only; the compose row keeps focus
 }
 
-function cancelEdit() {
-  editingNote = -1;
-  renderNotes();
-}
-
-// Tick complete = remove the item.
-function tickNote(index) {
+// Double-click a note to delete it.
+function deleteNote(index) {
   projects.removeNote(state, currentProject, index);
   scheduleSave();
   renderNotes();
 }
 
-// Copy text to the clipboard and briefly confirm on the button.
+// Copy text to the clipboard and briefly confirm on the element.
 async function copyText(text, button) {
   try {
     await navigator.clipboard.writeText(text);
@@ -626,67 +606,46 @@ function renderProjectInput() {
   els.projectInput.value = bound ? currentProject : '';
 }
 
-// Notes are per-project, so the list is disabled while the window is unbound.
+// Notes are a frictionless inline list: each committed row is plain text
+// (single-click copies, double-click deletes); a persistent empty compose row
+// sits at the end. The list is disabled while the window is unbound.
 function renderNotes() {
   const bound = currentProject !== null;
   const items = bound ? projects.getProject(state, currentProject).notes || [] : [];
 
-  if (!bound) editingNote = -1;
-  els.noteComposer.disabled = !bound;
+  els.noteComposeRow.disabled = !bound;
+  els.noteComposeRow.placeholder = bound ? 'Take a note' : 'Pick a project first';
   els.copyAllButton.disabled = !items.length;
   els.completeAllButton.disabled = !items.length;
 
-  els.noteList.innerHTML = '';
+  // Rebuild only the committed rows; the compose row at the end is persistent
+  // so in-progress text and focus survive a re-render.
+  els.noteList.querySelectorAll('.note-item').forEach((el) => el.remove());
+
   items.forEach((text, i) => {
     const item = document.createElement('li');
     item.className = 'note-item';
+    item.textContent = text;
+    item.title = 'Click to copy, double-click to delete';
 
-    if (i === editingNote) {
-      const input = document.createElement('textarea');
-      input.id = 'noteEditInput';
-      input.className = 'note-composer note-edit-input';
-      input.rows = 1;
-      input.value = text;
-      input.addEventListener('input', () => autoGrow(input));
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          commitEdit(i, input.value);
-        } else if (e.key === 'Escape') {
-          e.preventDefault();
-          cancelEdit();
-        }
-      });
-      input.addEventListener('blur', () => commitEdit(i, input.value));
-      item.appendChild(input);
-      els.noteList.appendChild(item);
-      return;
-    }
+    // Disambiguate single (copy) from double (delete) with a short timer.
+    let clickTimer = null;
+    item.addEventListener('click', () => {
+      if (clickTimer) return; // second click handled by dblclick
+      clickTimer = setTimeout(() => {
+        clickTimer = null;
+        copyText(text, item);
+      }, CLICK_DELAY);
+    });
+    item.addEventListener('dblclick', () => {
+      if (clickTimer) {
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      deleteNote(i);
+    });
 
-    const tick = document.createElement('button');
-    tick.type = 'button';
-    tick.className = 'note-btn tick';
-    tick.title = 'Complete';
-    tick.setAttribute('aria-label', 'Complete');
-    tick.innerHTML = icon('M20 6 9 17l-5-5');
-    tick.addEventListener('click', () => tickNote(i));
-
-    const label = document.createElement('span');
-    label.className = 'note-text';
-    label.textContent = text;
-    label.title = 'Click to edit';
-    label.addEventListener('click', () => startEdit(i));
-
-    const copy = document.createElement('button');
-    copy.type = 'button';
-    copy.className = 'note-btn copy';
-    copy.title = 'Copy';
-    copy.setAttribute('aria-label', 'Copy');
-    copy.innerHTML = icon('M9 9h11v11H9z', 'M5 15H4V4h11v1');
-    copy.addEventListener('click', () => copyText(text, copy));
-
-    item.append(tick, label, copy);
-    els.noteList.appendChild(item);
+    els.noteList.insertBefore(item, els.noteComposeItem);
   });
 }
 
