@@ -1,6 +1,7 @@
 :root {
   color-scheme: light dark;
   --bg: #ffffff;
+  --page: #eceae5; /* faint warm grey so the white cards lift off it */
   --text: #1f1f1f;
   --muted: #5f6368;
   --border: #dadce0;
@@ -17,6 +18,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #1f1f1f;
+    --page: #161616; /* darker than the cards so the lift still reads in dark */
     --text: #e3e3e3;
     --muted: #9aa0a6;
     --border: #444746;
@@ -42,7 +44,7 @@ body {
 }
 
 body {
-  background: var(--bg);
+  background: var(--page);
   color: var(--text);
   font: 13px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -63,9 +65,8 @@ body {
   gap: 12px;
   padding: 12px;
   background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .window-panel {
@@ -76,9 +77,8 @@ body {
   min-height: 0;
   padding: 12px;
   background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .topbar {
