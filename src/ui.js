@@ -43,7 +43,6 @@ let currentProject = null;
 let saveTimer = null;
 
 // Day-cycle + planner tile edit state.
-let themeDay = 'mon'; // the day key the theme box edits (today, Mon–Thu)
 let editingTile = null; // { key, index } of the planner tile being edited, or null
 let distractionsOpen = false; // whether the distractions review list is expanded
 let dragSource = null; // { key, index } of the planner tile being dragged, or null
@@ -83,9 +82,6 @@ async function init() {
   }
 
   if (dirty) await storage.save(state);
-
-  // The theme box edits today's theme (Mon–Thu), falling back to Monday.
-  themeDay = { 1: 'mon', 2: 'tue', 3: 'wed', 4: 'thu' }[new Date().getDay()] || 'mon';
 
   renderAll();
   bindEvents();
@@ -130,9 +126,9 @@ function bindEvents() {
   els.copyAllButton.addEventListener('click', copyAllNotes);
   els.completeAllButton.addEventListener('click', completeAllNotes);
 
-  // Day theme: the field edits today's theme (above the task column).
+  // Theme: a single day-agnostic label (above the task column).
   els.dayThemeInput.addEventListener('input', () => {
-    projects.setDayTheme(state, themeDay, els.dayThemeInput.value);
+    projects.setTheme(state, els.dayThemeInput.value);
     scheduleSave();
   });
 
@@ -648,7 +644,7 @@ function renderDayHeader() {
     month: 'short'
   });
   if (document.activeElement !== els.dayThemeInput) {
-    els.dayThemeInput.value = (state.dayThemes && state.dayThemes[themeDay]) || '';
+    els.dayThemeInput.value = state.theme || '';
   }
 }
 
