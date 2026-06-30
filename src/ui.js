@@ -8,8 +8,6 @@ import * as projects from './projects.js';
 const SAVE_DELAY = 400; // ms to debounce autosave writes
 const FLASH_MS = 900; // how long a "Copied" confirmation shows
 const CLICK_DELAY = 220; // ms to wait for a second click before copying
-const SWIPE_THRESHOLD = 60; // px of horizontal travel to toggle a planner tile
-const SWIPE_COOLDOWN = 450; // ms after a swipe-toggle before another can fire
 const DAYS = ['mon', 'tue', 'wed', 'thu']; // working days in the week strip
 
 const els = {
@@ -49,7 +47,6 @@ let saveTimer = null;
 let cycleDay = 'mon'; // which day the theme control is showing
 let editingTile = null; // { key, index } of the planner tile being edited, or null
 let distractionsOpen = false; // whether the distractions review list is expanded
-let swipeCooling = false; // brief lock so one tile swipe toggles only once
 
 // Combobox state.
 let comboOpen = false;
@@ -510,24 +507,27 @@ function addOnEnter(event, input, key) {
 
 // Planner: the schedule list (left) and the auto-numbered task list (right).
 function renderPlanner() {
-  renderTileColumn(els.scheduleList, state.schedule || [], 'schedule', false);
-  renderTileColumn(els.taskList, state.tasks || [], 'tasks', true);
+  // Schedule: plain editable tiles (no tick, no strike). Tasks: completable.
+  renderTileColumn(els.scheduleList, state.schedule || [], 'schedule', false, false);
+  renderTileColumn(els.taskList, state.tasks || [], 'tasks', true, true);
 }
 
-function renderTileColumn(listEl, items, key, numbered) {
+function renderTileColumn(listEl, items, key, numbered, completable) {
   listEl.innerHTML = '';
   items.forEach((item, i) => {
     const li = document.createElement('li');
-    li.className = `planner-item${item.done ? ' done' : ''}`;
+    li.className = `planner-item${completable && item.done ? ' done' : ''}`;
 
-    const tick = document.createElement('button');
-    tick.type = 'button';
-    tick.className = 'note-btn tick';
-    tick.title = item.done ? 'Mark not done' : 'Complete';
-    tick.setAttribute('aria-label', tick.title);
-    tick.innerHTML = icon('M20 6 9 17l-5-5');
-    tick.addEventListener('click', () => toggleTile(key, i));
-    li.appendChild(tick);
+    if (completable) {
+      const tick = document.createElement('button');
+      tick.type = 'button';
+      tick.className = 'note-btn tick';
+      tick.title = item.done ? 'Mark not done' : 'Complete';
+      tick.setAttribute('aria-label', tick.title);
+      tick.innerHTML = icon('M20 6 9 17l-5-5');
+      tick.addEventListener('click', () => toggleTile(key, i));
+      li.appendChild(tick);
+    }
 
     if (numbered) {
       const num = document.createElement('span');
@@ -563,48 +563,8 @@ function renderTileColumn(listEl, items, key, numbered) {
       li.appendChild(label);
     }
 
-    attachTileSwipe(li, key, i);
     listEl.appendChild(li);
   });
-}
-
-// A two-finger horizontal trackpad swipe (arrives as wheel deltaX) toggles a
-// tile's done state — the same as the tick button. Vertical scrolling passes
-// through untouched; a shared cooldown stops one flick from toggling twice.
-function attachTileSwipe(li, key, index) {
-  let accum = 0;
-  let settleTimer = null;
-  li.addEventListener(
-    'wheel',
-    (e) => {
-      // Only act on clearly-horizontal gestures; let vertical scroll through.
-      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
-      e.preventDefault();
-      if (swipeCooling) return;
-
-      accum += e.deltaX;
-      // Nudge the tile so the swipe feels responsive (capped, both directions).
-      const nudge = Math.max(-22, Math.min(22, accum * 0.4));
-      li.style.transform = `translateX(${nudge}px)`;
-      // Settle back if the gesture pauses without crossing the threshold.
-      clearTimeout(settleTimer);
-      settleTimer = setTimeout(() => {
-        accum = 0;
-        li.style.transform = '';
-      }, 150);
-
-      if (Math.abs(accum) >= SWIPE_THRESHOLD) {
-        accum = 0;
-        li.style.transform = '';
-        swipeCooling = true;
-        setTimeout(() => {
-          swipeCooling = false;
-        }, SWIPE_COOLDOWN);
-        toggleTile(key, index); // re-renders the column
-      }
-    },
-    { passive: false }
-  );
 }
 
 function toggleTile(key, index) {
