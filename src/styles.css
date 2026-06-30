@@ -363,6 +363,92 @@ body {
   border-color: var(--border);
 }
 
+/* Planner: two equal columns of tiles (schedule | numbered tasks) */
+.planner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: start;
+}
+
+.planner-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tile-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.planner-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 5px 4px 5px 8px;
+  border-radius: 8px;
+  background: var(--button);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.planner-num {
+  flex: none;
+  color: var(--muted);
+}
+
+.planner-text {
+  flex: 1;
+  min-width: 0;
+  padding-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+.planner-item .note-btn {
+  width: 22px;
+  height: 22px;
+}
+
+.planner-item .note-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+.tile-add {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tile-input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+}
+
+.tile-input::placeholder {
+  color: var(--muted);
+}
+
+.tile-input:focus {
+  border-style: solid;
+  background: var(--button);
+}
+
 /* Removed tabs: a soft box, no disclosure arrow */
 .removed > summary {
   cursor: pointer;

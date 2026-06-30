@@ -21,6 +21,8 @@ export function emptyState() {
   return {
     projects: {},
     distractions: [],
+    schedule: [],
+    tasks: [],
     windows: {},
     openWindows: {},
     dayThemes: { mon: '', tue: '', wed: '', thu: '' }
@@ -38,6 +40,8 @@ export function normaliseState(loaded) {
     loaded && loaded.distractions !== undefined ? loaded.distractions : loaded && loaded.scratchpad;
   state.distractions = toNoteList(rawDistractions);
   delete state.scratchpad;
+  state.schedule = toNoteList(state.schedule);
+  state.tasks = toNoteList(state.tasks);
   for (const name of Object.keys(state.projects)) {
     state.projects[name].notes = toNoteList(state.projects[name].notes);
   }
@@ -135,6 +139,19 @@ export function addDistraction(state, text) {
 
 export function removeDistraction(state, index) {
   if (Array.isArray(state.distractions)) state.distractions.splice(index, 1);
+}
+
+// --- Generic global lists (schedule, tasks) --------------------------------
+
+export function addToList(state, key, text) {
+  const item = text.trim();
+  if (!item) return;
+  if (!Array.isArray(state[key])) state[key] = [];
+  state[key].push(item);
+}
+
+export function removeFromList(state, key, index) {
+  if (Array.isArray(state[key])) state[key].splice(index, 1);
 }
 
 // Point a window at a project, creating the project if it is new.

@@ -14,6 +14,34 @@
           autocomplete="off" aria-label="Day theme" />
       </section>
 
+      <section class="planner">
+        <div class="planner-col">
+          <ul id="scheduleList" class="tile-list"></ul>
+          <input
+            id="scheduleInput"
+            class="tile-input"
+            type="text"
+            placeholder="Schedule&hellip;"
+            autocomplete="off"
+            aria-label="Add to schedule"
+          />
+        </div>
+        <div class="planner-col">
+          <ul id="taskList" class="tile-list"></ul>
+          <div class="tile-add">
+            <span id="taskNumber" class="planner-num">1.</span>
+            <input
+              id="taskInput"
+              class="tile-input"
+              type="text"
+              placeholder="Task&hellip;"
+              autocomplete="off"
+              aria-label="Add a task"
+            />
+          </div>
+        </div>
+      </section>
+
       <header class="topbar">
         <div class="project-bar">
           <div class="combobox" id="comboWrap">

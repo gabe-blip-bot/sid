@@ -23,6 +23,11 @@ const els = {
   noteList: document.getElementById('noteList'),
   dayCycleButton: document.getElementById('dayCycleButton'),
   dayThemeInput: document.getElementById('dayThemeInput'),
+  scheduleList: document.getElementById('scheduleList'),
+  scheduleInput: document.getElementById('scheduleInput'),
+  taskList: document.getElementById('taskList'),
+  taskInput: document.getElementById('taskInput'),
+  taskNumber: document.getElementById('taskNumber'),
   removedSection: document.getElementById('removedSection'),
   removedSummary: document.getElementById('removedSummary'),
   removedList: document.getElementById('removedList'),
@@ -150,6 +155,10 @@ function bindEvents() {
       }
     }
   });
+
+  // Planner: schedule (left) + numbered tasks (right). Enter adds the next tile.
+  els.scheduleInput.addEventListener('keydown', (e) => addOnEnter(e, els.scheduleInput, 'schedule'));
+  els.taskInput.addEventListener('keydown', (e) => addOnEnter(e, els.taskInput, 'tasks'));
 
   bindTabWatch();
 }
@@ -490,9 +499,63 @@ function renderAll() {
   renderProjectInput();
   renderNotes();
   renderDayCycle();
+  renderPlanner();
   renderSaveStatus();
   renderRemoved();
   renderDistractions();
+}
+
+// Add an item to a global list on Enter; the input stays as the next empty tile.
+function addOnEnter(event, input, key) {
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  if (!input.value.trim()) return;
+  projects.addToList(state, key, input.value);
+  input.value = '';
+  scheduleSave();
+  renderPlanner();
+}
+
+// Planner: the schedule list (left) and the auto-numbered task list (right).
+function renderPlanner() {
+  renderTileColumn(els.scheduleList, state.schedule || [], 'schedule', false);
+  renderTileColumn(els.taskList, state.tasks || [], 'tasks', true);
+  els.taskNumber.textContent = `${(state.tasks || []).length + 1}.`;
+}
+
+function renderTileColumn(listEl, items, key, numbered) {
+  listEl.innerHTML = '';
+  items.forEach((text, i) => {
+    const li = document.createElement('li');
+    li.className = 'planner-item';
+
+    if (numbered) {
+      const num = document.createElement('span');
+      num.className = 'planner-num';
+      num.textContent = `${i + 1}.`;
+      li.appendChild(num);
+    }
+
+    const label = document.createElement('span');
+    label.className = 'planner-text';
+    label.textContent = text;
+    li.appendChild(label);
+
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'note-btn';
+    remove.title = 'Remove';
+    remove.setAttribute('aria-label', 'Remove');
+    remove.innerHTML = icon('M20 6 9 17l-5-5');
+    remove.addEventListener('click', () => {
+      projects.removeFromList(state, key, i);
+      scheduleSave();
+      renderPlanner();
+    });
+    li.appendChild(remove);
+
+    listEl.appendChild(li);
+  });
 }
 
 // The day-cycle button shows the selected day; the field edits that day's theme.
