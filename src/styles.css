@@ -130,8 +130,7 @@ body {
 
 /* Note taker: a borderless, wrapping, auto-growing text line */
 .note-composer {
-  flex: 1;
-  min-width: 0;
+  width: 100%;
   padding: 0;
   border: none;
   background: transparent;
@@ -240,7 +239,7 @@ body {
   font-size: 12px;
 }
 
-/* Notes: an open writing area — bulleted plain lines you type straight into */
+/* Notes: a raw notepad — plain lines you type straight into, no bullets */
 .notes {
   display: flex;
   flex-direction: column;
@@ -252,35 +251,61 @@ body {
   padding: 0;
 }
 
-/* Committed note: a plain bulleted line. Single-click copies, double deletes. */
+/* Committed note: a plain line with copy/clear buttons revealed on hover. */
 .note-item {
-  padding: 1px 0 1px 1.2em;
-  text-indent: -1.2em;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 1px 0;
   line-height: 1.65;
+}
+
+.note-text {
+  flex: 1;
+  min-width: 0;
   overflow-wrap: anywhere;
-  cursor: pointer;
-  user-select: none;
 }
 
-.note-item::before,
-.note-compose-item::before {
-  content: '\2022\00a0'; /* "• " */
+.note-actions {
+  flex: none;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+.note-item:hover .note-actions,
+.note-actions:focus-within {
+  opacity: 1;
+}
+
+.note-line-btn {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
   color: var(--muted);
+  cursor: pointer;
 }
 
-.note-item.copied {
+.note-line-btn:hover {
+  background: var(--button-hover);
+  color: var(--text);
+}
+
+.note-line-btn.copied {
   color: var(--ok);
 }
 
-/* The always-present compose line at the end — just the next bullet to type on. */
+/* The always-present compose line at the end — the raw line you write on. */
 .note-compose-item {
-  display: flex;
-  align-items: baseline;
   padding: 1px 0;
-}
-
-.note-compose-item::before {
-  flex: none;
 }
 
 /* Bulk actions beneath the lowest note: copy all / clear all */
