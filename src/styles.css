@@ -100,7 +100,6 @@ body {
 .project {
   font-weight: 700;
   font-size: 15px;
-  color: var(--accent); /* chosen project shown in the icon blue */
 }
 
 .input::placeholder {
@@ -363,7 +362,7 @@ body {
 }
 
 .tile-list.bulleted .planner-item {
-  padding: 4px 0 4px 1.2em;
+  padding: 2px 0 2px 1.2em;
   text-indent: -1.2em;
 }
 
@@ -374,7 +373,7 @@ body {
 
 .tile-list.numbered .planner-item {
   counter-increment: task;
-  padding: 4px 0 4px 1.7em;
+  padding: 2px 0 2px 1.7em;
   text-indent: -1.7em;
 }
 
@@ -401,7 +400,12 @@ body {
   color: var(--muted);
 }
 
-/* Removed tabs: a quiet text disclosure, no box or arrow */
+/* Removed tabs: pinned to the bottom of the window panel (just above the chrome
+   section line) regardless of how many notes there are. A quiet text disclosure. */
+.removed {
+  margin-top: auto;
+}
+
 .removed > summary {
   cursor: pointer;
   color: var(--muted);
@@ -464,11 +468,14 @@ body {
   padding: 6px 12px;
 }
 
-/* Distractions: one module — click to type, chevron on the right to expand. */
+/* Distractions: one module — click to type, chevron on the right to expand.
+   A light line separates it from the planner above. */
 .distractions {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
 }
 
 .distraction-bar {
