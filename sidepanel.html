@@ -8,6 +8,7 @@
   </head>
   <body>
     <main class="app">
+      <div class="chrome-panel">
       <section class="week-strip" aria-label="Day theme">
         <button id="dayCycleButton" class="day-cycle" type="button" aria-label="Cycle day">Mon</button>
         <input id="dayThemeInput" class="day-theme" type="text" placeholder="Theme"
@@ -42,6 +43,19 @@
         </div>
       </section>
 
+      <section class="distractions">
+        <input
+          id="distractionInput"
+          class="tile-input distraction-box"
+          type="text"
+          placeholder="Distraction&hellip;"
+          autocomplete="off"
+          aria-label="Add a distraction"
+        />
+      </section>
+      </div>
+
+      <div class="window-panel">
       <header class="topbar">
         <div class="project-bar">
           <div class="combobox" id="comboWrap">
@@ -142,18 +156,7 @@
         <summary id="removedSummary">Removed Tabs</summary>
         <ul id="removedList" class="removed-list"></ul>
       </details>
-
-      <section class="distractions">
-        <input
-          id="distractionInput"
-          class="input distraction-box"
-          type="text"
-          placeholder="Distraction&hellip;"
-          autocomplete="off"
-          aria-label="Add a distraction"
-        />
-        <ul id="distractionList" class="distraction-list"></ul>
-      </section>
+      </div>
     </main>
 
     <script type="module" src="src/ui.js"></script>

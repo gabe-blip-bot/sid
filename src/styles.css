@@ -56,6 +56,23 @@ body {
   overflow-y: auto;
 }
 
+/* Chrome (global, top) panel and window (per-project) panel, divided */
+.chrome-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.window-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
 .topbar {
   display: flex;
   flex-direction: column;
@@ -420,6 +437,21 @@ body {
   height: 13px;
 }
 
+.planner-item.done .planner-text {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.planner-item.done .note-btn.tick {
+  color: var(--ok);
+  opacity: 1;
+}
+
+.tile-edit {
+  flex: 1;
+  min-width: 0;
+}
+
 .tile-add {
   display: flex;
   align-items: center;
@@ -514,34 +546,9 @@ body {
   padding: 6px 12px;
 }
 
-/* Distractions: a write box with the captured items indented below it */
+/* Distractions: just a write box at the bottom of the chrome panel */
 .distractions {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.distraction-list {
-  list-style: none;
-  margin: 4px 0 0;
-  padding: 0 0 0 18px;
-}
-
-.distraction-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 0;
-}
-
-.distraction-item + .distraction-item {
-  border-top: 1px solid var(--border);
-}
-
-.distraction-text {
-  flex: 1;
-  min-width: 0;
-  overflow-wrap: anywhere;
 }
 
 .status {
