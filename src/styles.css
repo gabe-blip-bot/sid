@@ -419,6 +419,7 @@ body {
   background: var(--button);
   font-size: 12px;
   line-height: 1.4;
+  transition: transform 0.12s ease;
 }
 
 .planner-num {
@@ -456,12 +457,6 @@ body {
 .tile-edit {
   flex: 1;
   min-width: 0;
-}
-
-.tile-add {
-  display: flex;
-  align-items: center;
-  gap: 4px;
 }
 
 .tile-input {

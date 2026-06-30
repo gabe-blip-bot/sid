@@ -29,6 +29,12 @@ It is not a task manager, not a notes app, and not an AI assistant.
 - **Day theme** — a button that cycles through the working days (Mon→Tue→Wed→Thu)
   with a theme field beside it. It's global (not per project) and autosaves; the
   button defaults to today and is highlighted when showing today. Purely passive.
+- **Planner** — two global columns: a free-form **schedule** (left) and an
+  auto-numbered **task** list (right). Type in a column's input and press Enter to
+  add a tile; the next empty input is ready immediately (no number shown until a
+  task actually exists, so only created tasks are numbered 1..N). Complete a tile
+  by clicking its **tick** or by **two-finger swiping horizontally across it** —
+  either toggles the strike-through. Click a tile's text to edit it in place.
 - **Distractions** — one global quick-capture box at the bottom of the panel.
   Click it, type a distraction, and press Enter; it's saved and the box clears
   (nothing expands). Once you've captured something, a **count + chevron** appears
