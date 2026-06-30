@@ -15,15 +15,15 @@ It is not a task manager, not a notes app, and not an AI assistant.
 - Chrome's side-panel header shows the window's current project — `<project> — Sid`
   (project name first so it survives truncation), or plain `Sid` when the window is
   unbound. It updates as you switch, rename, or archive the project.
-- The panel has two sections separated by spacing alone — no fills, borders, or
-  shadows: the **per-project (window) section** on top (project bar, removed tabs,
-  notes) and the **global (chrome) section** below (day theme, planner, distractions
-  — shared across all windows).
+- The panel has two sections: the **per-project (window) section** on top (project
+  bar, notes, then removed tabs pinned at its foot) and the **global (chrome)
+  section** below (planner, distractions — shared across all windows), set off by a
+  light dividing line.
 - The header is a single project combobox: click to see all projects, type to
   filter, and Enter on a new name creates it. Typing a name that already exists
-  switches to it (never merges). Header icons act on the current project:
-  **save** (capture this window's tabs), **pencil** (rename in place), and
-  **archive**.
+  switches to it (never merges). Header icons: **undo** (revert the last content
+  change in either panel), **save** (capture this window's tabs), **pencil**
+  (rename in place), and **archive**.
   The whole panel is styled like a plain written document — no tiles, boxes, or
   list buttons; you type straight onto lines.
 - **Notes** — an open, bulleted scratchpad for the project. The bottom line is
@@ -59,6 +59,9 @@ It is not a task manager, not a notes app, and not an AI assistant.
 - Switching windows switches to that window's project automatically.
 - Notes and scratchpad autosave to Chrome local storage with debounced writes.
   Saving a project writes immediately.
+- **Undo** (header icon) reverts the last content change in either panel — adding
+  or deleting a note, schedule/task/distraction line, completing a task, or a theme
+  edit — one step at a time. History is per window and not kept across reloads.
 - **Across a Chrome restart**, window IDs are reassigned, so Sid does not try to
   restore window↔project bindings. On startup it prunes bindings for windows
   that no longer exist, and each reopened window comes up **unbound** — prompting

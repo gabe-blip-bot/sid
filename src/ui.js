@@ -14,6 +14,7 @@ const els = {
   projectInput: document.getElementById('projectInput'),
   projectListbox: document.getElementById('projectListbox'),
   renameInput: document.getElementById('renameInput'),
+  undoButton: document.getElementById('undoButton'),
   saveProjectButton: document.getElementById('saveProjectButton'),
   renameButton: document.getElementById('renameButton'),
   archiveButton: document.getElementById('archiveButton'),
@@ -41,6 +42,11 @@ let currentProject = null;
 let saveTimer = null;
 
 let distractionsOpen = false; // whether the distractions review list is expanded
+let themeEditing = false; // true once the theme field has snapshotted this focus
+
+// Undo: snapshots of state taken before each content edit (this window only).
+const UNDO_LIMIT = 50;
+const undoStack = [];
 
 // Combobox state.
 let comboOpen = false;
@@ -104,6 +110,7 @@ function bindEvents() {
   // Keep focus on the input when clicking a row, so blur doesn't pre-empt click.
   els.projectListbox.addEventListener('mousedown', (e) => e.preventDefault());
 
+  els.undoButton.addEventListener('click', undo);
   els.saveProjectButton.addEventListener('click', saveProject);
   els.renameButton.addEventListener('click', enterRename);
   els.renameInput.addEventListener('keydown', onRenameKey);
@@ -119,8 +126,16 @@ function bindEvents() {
     }
   });
 
-  // Theme: a single day-agnostic label (above the task column).
+  // Theme: a single day-agnostic label (above the task column). Snapshot once per
+  // editing session (on focus) so undo reverts the whole edit, not each keystroke.
+  els.dayThemeInput.addEventListener('focus', () => {
+    themeEditing = false;
+  });
   els.dayThemeInput.addEventListener('input', () => {
+    if (!themeEditing) {
+      pushUndo();
+      themeEditing = true;
+    }
     projects.setTheme(state, els.dayThemeInput.value);
     scheduleSave();
   });
@@ -131,6 +146,7 @@ function bindEvents() {
     if (e.key === 'Enter') {
       e.preventDefault();
       if (els.distractionInput.value.trim()) {
+        pushUndo();
         projects.addDistraction(state, els.distractionInput.value);
         els.distractionInput.value = '';
         scheduleSave();
@@ -391,6 +407,7 @@ async function archiveCurrent() {
 // Commit the compose row as a new note; keep focus so the next line is ready.
 function commitCompose() {
   if (!els.noteComposeRow.value.trim() || !currentProject) return;
+  pushUndo();
   projects.addNote(state, currentProject, els.noteComposeRow.value);
   els.noteComposeRow.value = '';
   autoGrow(els.noteComposeRow);
@@ -400,6 +417,7 @@ function commitCompose() {
 
 // Double-click a note to delete it.
 function deleteNote(index) {
+  pushUndo();
   projects.removeNote(state, currentProject, index);
   scheduleSave();
   renderNotes();
@@ -471,6 +489,7 @@ function addOnEnter(event, input, key) {
   if (event.key !== 'Enter') return;
   event.preventDefault();
   if (!input.value.trim()) return;
+  pushUndo();
   projects.addToList(state, key, input.value);
   input.value = '';
   scheduleSave();
@@ -524,6 +543,7 @@ function renderTileColumn(listEl, items, key) {
 
 // Single-click a task to toggle its done/strikethrough state, leaving it in place.
 function toggleTask(index) {
+  pushUndo();
   projects.toggleListItem(state, 'tasks', index);
   scheduleSave();
   renderPlanner();
@@ -531,6 +551,7 @@ function toggleTask(index) {
 
 // Double-click a line to delete it (mistakes/clearing).
 function deleteTile(key, index) {
+  pushUndo();
   projects.removeFromList(state, key, index);
   scheduleSave();
   renderPlanner();
@@ -728,9 +749,35 @@ function renderDistractions() {
 }
 
 function deleteDistraction(index) {
+  pushUndo();
   projects.removeDistraction(state, index);
   scheduleSave();
   renderDistractions();
+}
+
+// --- Undo ------------------------------------------------------------------
+
+// Snapshot the whole state before a content edit so it can be reverted. Covers
+// both panels (notes, schedule, tasks, theme, distractions).
+function pushUndo() {
+  undoStack.push(JSON.stringify(state));
+  if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+  updateUndoButton();
+}
+
+// Revert the most recent content edit and persist it (also syncs other windows).
+function undo() {
+  const prev = undoStack.pop();
+  if (prev === undefined) return;
+  state = projects.normaliseState(JSON.parse(prev));
+  currentProject = projects.windowProject(state, windowId) || currentProject;
+  storage.save(state);
+  renderAll();
+  updateUndoButton();
+}
+
+function updateUndoButton() {
+  els.undoButton.disabled = undoStack.length === 0;
 }
 
 // --- Persistence -----------------------------------------------------------

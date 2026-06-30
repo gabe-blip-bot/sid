@@ -36,6 +36,20 @@
             hidden
           />
           <button
+            id="undoButton"
+            class="icon-button"
+            type="button"
+            title="Undo last change"
+            aria-label="Undo last change"
+            disabled
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 14 4 9l5-5" />
+              <path d="M4 9h11a5 5 0 0 1 0 10h-1" />
+            </svg>
+          </button>
+          <button
             id="saveProjectButton"
             class="icon-button"
             type="button"
@@ -134,7 +148,7 @@
             id="distractionInput"
             class="distraction-box"
             type="text"
-            placeholder="Distraction&hellip;"
+            placeholder="Distractions"
             autocomplete="off"
             aria-label="Add a distraction"
           />
