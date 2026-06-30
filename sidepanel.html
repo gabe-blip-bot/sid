@@ -8,60 +8,10 @@
   </head>
   <body>
     <main class="app">
-      <section class="week-strip" aria-label="Week themes">
-        <div class="day-row" id="day-mon" data-day="mon">
-          <span class="day-grip" draggable="true" title="Drag to reorder" aria-label="Reorder Monday">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" aria-hidden="true">
-              <path d="M5 9h14" /><path d="M5 15h14" />
-            </svg>
-          </span>
-          <span class="day-label">Mon</span>
-          <input id="theme-mon" class="day-theme" type="text" placeholder="Theme"
-            autocomplete="off" aria-label="Monday theme" />
-        </div>
-        <div class="day-row" id="day-tue" data-day="tue">
-          <span class="day-grip" draggable="true" title="Drag to reorder" aria-label="Reorder Tuesday">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" aria-hidden="true">
-              <path d="M5 9h14" /><path d="M5 15h14" />
-            </svg>
-          </span>
-          <span class="day-label">Tue</span>
-          <input id="theme-tue" class="day-theme" type="text" placeholder="Theme"
-            autocomplete="off" aria-label="Tuesday theme" />
-        </div>
-        <div class="day-row" id="day-wed" data-day="wed">
-          <span class="day-grip" draggable="true" title="Drag to reorder" aria-label="Reorder Wednesday">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" aria-hidden="true">
-              <path d="M5 9h14" /><path d="M5 15h14" />
-            </svg>
-          </span>
-          <span class="day-label">Wed</span>
-          <input id="theme-wed" class="day-theme" type="text" placeholder="Theme"
-            autocomplete="off" aria-label="Wednesday theme" />
-        </div>
-        <div class="day-row" id="day-thu" data-day="thu">
-          <span class="day-grip" draggable="true" title="Drag to reorder" aria-label="Reorder Thursday">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" aria-hidden="true">
-              <path d="M5 9h14" /><path d="M5 15h14" />
-            </svg>
-          </span>
-          <span class="day-label">Thu</span>
-          <input id="theme-thu" class="day-theme" type="text" placeholder="Theme"
-            autocomplete="off" aria-label="Thursday theme" />
-        </div>
-      </section>
-
-      <section class="field-group">
-        <textarea
-          id="scratchpadInput"
-          class="textarea"
-          rows="1"
-          placeholder="Add a chrome note"
-        ></textarea>
+      <section class="week-strip" aria-label="Day theme">
+        <button id="dayCycleButton" class="day-cycle" type="button" aria-label="Cycle day">Mon</button>
+        <input id="dayThemeInput" class="day-theme" type="text" placeholder="Theme"
+          autocomplete="off" aria-label="Day theme" />
       </section>
 
       <header class="topbar">
@@ -172,6 +122,21 @@
         <summary id="removedSummary">Removed Tabs</summary>
         <ul id="removedList" class="removed-list"></ul>
       </details>
+
+      <section class="distractions">
+        <input
+          id="distractionInput"
+          class="line-input"
+          type="text"
+          placeholder="Distractions"
+          autocomplete="off"
+          aria-label="Add a distraction"
+        />
+        <details id="distractionsSection" class="distractions-box" hidden>
+          <summary id="distractionsSummary">Distractions</summary>
+          <ul id="distractionList" class="distraction-list"></ul>
+        </details>
+      </section>
     </main>
 
     <script type="module" src="src/ui.js"></script>

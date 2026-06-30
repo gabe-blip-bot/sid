@@ -21,10 +21,15 @@ const els = {
   copyAllButton: document.getElementById('copyAllButton'),
   completeAllButton: document.getElementById('completeAllButton'),
   noteList: document.getElementById('noteList'),
-  scratchpadInput: document.getElementById('scratchpadInput'),
+  dayCycleButton: document.getElementById('dayCycleButton'),
+  dayThemeInput: document.getElementById('dayThemeInput'),
   removedSection: document.getElementById('removedSection'),
   removedSummary: document.getElementById('removedSummary'),
-  removedList: document.getElementById('removedList')
+  removedList: document.getElementById('removedList'),
+  distractionInput: document.getElementById('distractionInput'),
+  distractionsSection: document.getElementById('distractionsSection'),
+  distractionsSummary: document.getElementById('distractionsSummary'),
+  distractionList: document.getElementById('distractionList')
 };
 
 let state = projects.emptyState();
@@ -32,9 +37,9 @@ let windowId = null;
 let currentProject = null;
 let saveTimer = null;
 
-// Note edit + theme drag state.
+// Note edit + day-cycle state.
 let editingNote = -1; // index of the note being edited inline, or -1
-let dragFrom = -1; // index of the day-theme row being dragged, or -1
+let cycleDay = 'mon'; // which day the theme control is showing
 
 // Combobox state.
 let comboOpen = false;
@@ -72,6 +77,9 @@ async function init() {
 
   if (dirty) await storage.save(state);
 
+  // Start the day-theme control on today (Mon–Thu), else Monday.
+  cycleDay = { 1: 'mon', 2: 'tue', 3: 'wed', 4: 'thu' }[new Date().getDay()] || 'mon';
+
   renderAll();
   bindEvents();
 
@@ -82,7 +90,7 @@ async function init() {
   storage.onChange((incoming) => {
     state = projects.normaliseState(incoming);
     currentProject = projects.windowProject(state, windowId) || currentProject;
-    renderAll({ preserveFocus: true });
+    renderAll();
     if (comboOpen) renderList();
   });
 }
@@ -108,52 +116,31 @@ function bindEvents() {
   els.copyAllButton.addEventListener('click', copyAllNotes);
   els.completeAllButton.addEventListener('click', completeAllNotes);
 
-  els.scratchpadInput.addEventListener('input', () => {
-    state.scratchpad = els.scratchpadInput.value;
-    autoGrowScratch();
+  // Day theme: the button cycles Mon→Tue→Wed→Thu; the field edits that day.
+  els.dayCycleButton.addEventListener('click', () => {
+    cycleDay = DAYS[(DAYS.indexOf(cycleDay) + 1) % DAYS.length];
+    renderDayCycle();
+    els.dayThemeInput.focus();
+  });
+  els.dayThemeInput.addEventListener('input', () => {
+    projects.setDayTheme(state, cycleDay, els.dayThemeInput.value);
     scheduleSave();
   });
 
-  bindWeekStrip();
-  bindTabWatch();
-}
-
-// Wire each day-theme field (edit + drag-to-reorder).
-function bindWeekStrip() {
-  DAYS.forEach((day, index) => {
-    const input = document.getElementById(`theme-${day}`);
-    input.addEventListener('input', () => {
-      projects.setDayTheme(state, day, input.value);
-      scheduleSave();
-    });
-
-    const row = document.getElementById(`day-${day}`);
-    const grip = row.querySelector('.day-grip');
-    grip.addEventListener('dragstart', (e) => {
-      dragFrom = index;
-      e.dataTransfer.effectAllowed = 'move';
-    });
-    grip.addEventListener('dragend', () => {
-      dragFrom = -1;
-      row.classList.remove('drag-over');
-    });
-    row.addEventListener('dragover', (e) => {
-      if (dragFrom < 0) return;
+  // Distractions: a global quick-capture list. Enter saves and clears.
+  els.distractionInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
       e.preventDefault();
-      row.classList.add('drag-over');
-    });
-    row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
-    row.addEventListener('drop', (e) => {
-      e.preventDefault();
-      row.classList.remove('drag-over');
-      if (dragFrom >= 0 && dragFrom !== index) {
-        projects.moveDayTheme(state, dragFrom, index);
+      if (els.distractionInput.value.trim()) {
+        projects.addDistraction(state, els.distractionInput.value);
+        els.distractionInput.value = '';
         scheduleSave();
-        renderWeek();
+        renderDistractions();
       }
-      dragFrom = -1;
-    });
+    }
   });
+
+  bindTabWatch();
 }
 
 // Refresh the save-status dot when this window's tabs change.
@@ -509,25 +496,56 @@ async function restoreTab(url) {
 
 // --- Rendering -------------------------------------------------------------
 
-function renderAll({ preserveFocus = false } = {}) {
+function renderAll() {
   renderProjectInput();
   renderNotes();
-  renderWeek();
-  renderScratchpad({ preserveFocus });
+  renderDayCycle();
   renderSaveStatus();
   renderRemoved();
+  renderDistractions();
 }
 
-// Show each day's theme and highlight today's row (Mon–Thu only).
-function renderWeek() {
+// The day-cycle button shows the selected day; the field edits that day's theme.
+function renderDayCycle() {
+  const labels = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu' };
   const todayKey = { 1: 'mon', 2: 'tue', 3: 'wed', 4: 'thu' }[new Date().getDay()];
-  for (const day of DAYS) {
-    const input = document.getElementById(`theme-${day}`);
-    if (document.activeElement !== input) {
-      input.value = (state.dayThemes && state.dayThemes[day]) || '';
-    }
-    document.getElementById(`day-${day}`).classList.toggle('is-today', day === todayKey);
+  els.dayCycleButton.textContent = labels[cycleDay];
+  els.dayCycleButton.classList.toggle('is-today', cycleDay === todayKey);
+  if (document.activeElement !== els.dayThemeInput) {
+    els.dayThemeInput.value = (state.dayThemes && state.dayThemes[cycleDay]) || '';
   }
+}
+
+// Distractions: a collapsible global list with a quick-capture line above it.
+function renderDistractions() {
+  const items = state.distractions || [];
+  els.distractionsSection.hidden = items.length === 0;
+  els.distractionsSummary.textContent = `Distractions (${items.length})`;
+
+  els.distractionList.innerHTML = '';
+  items.forEach((text, i) => {
+    const item = document.createElement('li');
+    item.className = 'distraction-item';
+
+    const label = document.createElement('span');
+    label.className = 'distraction-text';
+    label.textContent = text;
+
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'note-btn';
+    remove.title = 'Remove';
+    remove.setAttribute('aria-label', 'Remove');
+    remove.innerHTML = icon('M20 6 9 17l-5-5');
+    remove.addEventListener('click', () => {
+      projects.removeDistraction(state, i);
+      scheduleSave();
+      renderDistractions();
+    });
+
+    item.append(label, remove);
+    els.distractionList.appendChild(item);
+  });
 }
 
 function renderProjectInput() {
@@ -559,7 +577,7 @@ function renderNotes() {
     if (i === editingNote) {
       const input = document.createElement('input');
       input.id = 'noteEditInput';
-      input.className = 'input note-edit-input';
+      input.className = 'line-input note-edit-input';
       input.type = 'text';
       input.value = text;
       input.addEventListener('keydown', (e) => {
@@ -608,23 +626,6 @@ function renderNotes() {
 function icon(...paths) {
   const d = paths.map((p) => `<path d="${p}"/>`).join('');
   return `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
-}
-
-// The scratchpad is global; it stays editable even while unbound.
-function renderScratchpad({ preserveFocus = false } = {}) {
-  if (!(preserveFocus && document.activeElement === els.scratchpadInput)) {
-    els.scratchpadInput.value = state.scratchpad || '';
-  }
-  autoGrowScratch();
-}
-
-// Grow the scratchpad to fit its content, up to ~40% of the panel, then scroll.
-function autoGrowScratch() {
-  const el = els.scratchpadInput;
-  el.style.height = 'auto';
-  const max = Math.max(38, Math.round(window.innerHeight * 0.4));
-  el.style.height = `${Math.min(el.scrollHeight, max)}px`;
-  el.style.overflowY = el.scrollHeight > max ? 'auto' : 'hidden';
 }
 
 // The save icon shows last-saved time on hover and a status dot: green when the
