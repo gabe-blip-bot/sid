@@ -53,8 +53,8 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
-  gap: 16px;
-  padding: 16px;
+  gap: 12px;
+  padding: 8px;
   overflow-y: auto;
 }
 
@@ -79,6 +79,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding: 12px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -90,6 +91,7 @@ body {
   gap: 12px;
   flex: 1;
   min-height: 0;
+  padding: 12px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 12px;
