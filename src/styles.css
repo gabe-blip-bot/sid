@@ -1,35 +1,37 @@
 :root {
   color-scheme: light dark;
+  /* Warm palette: dark elements are a deep brown; blue/green/coral are used
+     sparingly as accents (matching the icon's blue for consistency). */
   --bg: #ffffff;
   --page: #ffffff; /* same as the panels — sections separated by space, not fill */
-  --text: #1f1f1f;
-  --muted: #5f6368;
-  --border: #dadce0;
+  --text: #3a2a22; /* deep brown — all dark text and icon strokes */
+  --muted: #8a7c72; /* warm grey-brown for secondary text */
+  --border: #e6ded6; /* warm hairline */
   --field: #ffffff;
-  --button: #f8fafd;
-  --button-hover: #f1f3f4;
-  --focus: #0b57d0;
-  --accent: #0b57d0;
+  --button: #f6f1ec; /* warm off-white */
+  --button-hover: #ece4db;
+  --focus: #6dbae5; /* icon blue */
+  --accent: #6dbae5;
   --accent-text: #ffffff;
-  --danger: #c5221f;
-  --ok: #1e8e3e;
+  --danger: #e8825a; /* coral — sparingly, for attention/unsaved */
+  --ok: #9cc4a0; /* sage green — sparingly, for done/saved */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #1f1f1f;
-    --page: #1f1f1f; /* same as the panels in dark too */
-    --text: #e3e3e3;
-    --muted: #9aa0a6;
-    --border: #444746;
-    --field: #2d2d2d;
-    --button: #303134;
-    --button-hover: #3c4043;
-    --focus: #a8c7fa;
-    --accent: #a8c7fa;
-    --accent-text: #062e6f;
-    --danger: #f28b82;
-    --ok: #81c995;
+    --bg: #3a2a22; /* deep brown surface */
+    --page: #2c1f19; /* darker brown behind the sections */
+    --text: #ece3dd; /* warm off-white */
+    --muted: #b3a397;
+    --border: #56433a;
+    --field: #2c1f19;
+    --button: #4a3830;
+    --button-hover: #564139;
+    --focus: #6dbae5;
+    --accent: #6dbae5;
+    --accent-text: #1f1410;
+    --danger: #e8825a;
+    --ok: #9cc4a0;
   }
 }
 
