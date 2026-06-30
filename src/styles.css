@@ -345,10 +345,6 @@ body {
   background: var(--danger);
 }
 
-#saveProjectButton.is-clean::after {
-  background: var(--ok);
-}
-
 #saveProjectButton:disabled::after {
   background: transparent;
   box-shadow: none;
