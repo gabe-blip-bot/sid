@@ -16,8 +16,8 @@ It is not a task manager, not a notes app, and not an AI assistant.
   (project name first so it survives truncation), or plain `Sid` when the window is
   unbound. It updates as you switch, rename, or archive the project.
 - The panel has two sections separated by spacing alone — no fills, borders, or
-  shadows: the **per-project (window) section** on top (project bar, notes, removed
-  tabs) and the **global (chrome) section** below (day theme, planner, distractions
+  shadows: the **per-project (window) section** on top (project bar, removed tabs,
+  notes) and the **global (chrome) section** below (day theme, planner, distractions
   — shared across all windows).
 - The header is a single project combobox: click to see all projects, type to
   filter, and Enter on a new name creates it. Typing a name that already exists
