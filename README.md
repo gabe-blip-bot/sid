@@ -15,11 +15,10 @@ It is not a task manager, not a notes app, and not an AI assistant.
 - Chrome's side-panel header shows the window's current project — `<project> — Sid`
   (project name first so it survives truncation), or plain `Sid` when the window is
   unbound. It updates as you switch, rename, or archive the project.
-- The panel is two raised white tiles on a faint recessed background — separated
-  by depth (soft shadow + a clean channel) rather than a divider line: the
-  **per-project (window) card** on top (project bar, notes, removed tabs) and the
-  **global (chrome) card** below (day theme, planner, distractions — shared across
-  all windows).
+- The panel has two sections separated by spacing alone — no fills, borders, or
+  shadows: the **per-project (window) section** on top (project bar, notes, removed
+  tabs) and the **global (chrome) section** below (day theme, planner, distractions
+  — shared across all windows).
 - The header is a single project combobox: click to see all projects, type to
   filter, and Enter on a new name creates it. Typing a name that already exists
   switches to it (never merges). Header icons act on the current project:
