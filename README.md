@@ -61,9 +61,16 @@ All data stays in Chrome local storage. No accounts, no network requests.
 2. Enable **Developer mode**.
 3. Click **Load unpacked**.
 4. Select this folder.
-5. Click the Sid toolbar icon to open the side panel.
+5. Click the Sid toolbar icon — or press the keyboard shortcut — to open the
+   side panel.
 
 After editing files, click **Reload** on the Sid card.
+
+## Keyboard shortcut
+
+Press **Ctrl+Shift+Y** (**Cmd+Shift+Y** on macOS) to toggle the side panel open
+and closed — the same as clicking the toolbar icon. Rebind or clear it at
+`chrome://extensions/shortcuts` if it clashes with another extension.
 
 ## Layout
 

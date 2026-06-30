@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Sidebar Sid",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "description": "A lightweight browser context layer. Answer: what was I working on?",
   "permissions": [
     "sidePanel",
@@ -10,6 +10,15 @@
   ],
   "action": {
     "default_title": "Open Sidebar Sid"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "Toggle the Sidebar Sid side panel"
+    }
   },
   "background": {
     "service_worker": "src/background.js"
