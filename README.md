@@ -29,12 +29,13 @@ It is not a task manager, not a notes app, and not an AI assistant.
 - **Day theme** — a button that cycles through the working days (Mon→Tue→Wed→Thu)
   with a theme field beside it. It's global (not per project) and autosaves; the
   button defaults to today and is highlighted when showing today. Purely passive.
-- **Distractions** — a global quick-capture line at the bottom of the panel. Type
-  a distraction and press Enter; it's saved and tucked away (the line clears and
-  nothing expands) into a collapsible **Distractions (N)** list whose count bumps
-  to confirm the capture. Expand it to review items — **single-click** a row to
-  copy it, **double-click** to delete it. The list hides when empty and is shared
-  across every window.
+- **Distractions** — one global quick-capture box at the bottom of the panel.
+  Click it, type a distraction, and press Enter; it's saved and the box clears
+  (nothing expands). Once you've captured something, a **count + chevron** appears
+  on the right of the box — click it to expand the captured list, click again to
+  collapse. Each row is plain text: **single-click** copies it, **double-click**
+  deletes it. The chevron hides when the list is empty, and distractions are
+  shared across every window.
 - **Save** (header icon) captures the current window's reopenable tabs
   (title + URL, in order) with a timestamp as the project's snapshot. Its status
   dot is green when the snapshot matches the window's current tabs and red when

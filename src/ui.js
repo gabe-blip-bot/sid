@@ -34,8 +34,8 @@ const els = {
   removedSummary: document.getElementById('removedSummary'),
   removedList: document.getElementById('removedList'),
   distractionInput: document.getElementById('distractionInput'),
-  distractionSection: document.getElementById('distractionSection'),
-  distractionSummary: document.getElementById('distractionSummary'),
+  distractionToggle: document.getElementById('distractionToggle'),
+  distractionCount: document.getElementById('distractionCount'),
   distractionList: document.getElementById('distractionList')
 };
 
@@ -47,6 +47,7 @@ let saveTimer = null;
 // Day-cycle + planner tile edit state.
 let cycleDay = 'mon'; // which day the theme control is showing
 let editingTile = null; // { key, index } of the planner tile being edited, or null
+let distractionsOpen = false; // whether the distractions review list is expanded
 
 // Combobox state.
 let comboOpen = false;
@@ -153,6 +154,11 @@ function bindEvents() {
         renderDistractions();
       }
     }
+  });
+  // The chevron expands/collapses the captured-distractions list.
+  els.distractionToggle.addEventListener('click', () => {
+    distractionsOpen = !distractionsOpen;
+    renderDistractions();
   });
 
   // Planner: schedule (left) + numbered tasks (right). Enter adds the next tile.
@@ -740,14 +746,26 @@ function renderRemoved() {
 
 // --- Distractions (global capture-and-hide list) ---------------------------
 
-// A collapsible review list (like Removed Tabs): hidden when empty, default
-// collapsed, each row plain text. Single-click copies, double-click deletes.
+// One module: the input captures; a count + chevron on the right appears once
+// something is captured and expands the review list. Each row is plain text —
+// single-click copies, double-click deletes.
 function renderDistractions() {
   const items = state.distractions || [];
-  els.distractionSection.hidden = items.length === 0;
-  els.distractionSummary.textContent = `Distractions (${items.length})`;
+  const has = items.length > 0;
+  if (!has) distractionsOpen = false; // nothing to show, so stay collapsed
 
+  els.distractionToggle.hidden = !has;
+  els.distractionCount.textContent = String(items.length);
+  els.distractionToggle.classList.toggle('is-open', distractionsOpen);
+  els.distractionToggle.setAttribute('aria-expanded', String(distractionsOpen));
+  const label = distractionsOpen ? 'Hide distractions' : 'Show distractions';
+  els.distractionToggle.title = label;
+  els.distractionToggle.setAttribute('aria-label', label);
+
+  els.distractionList.hidden = !(has && distractionsOpen);
   els.distractionList.innerHTML = '';
+  if (els.distractionList.hidden) return;
+
   items.forEach((text, i) => {
     const li = document.createElement('li');
     li.className = 'note-item';
