@@ -188,6 +188,15 @@ export function editListItem(state, key, index, text) {
   else list[index].text = trimmed;
 }
 
+// Move a tile from one position to another (drag-and-drop reorder).
+export function moveListItem(state, key, from, to) {
+  const list = state[key];
+  if (!Array.isArray(list)) return;
+  if (from < 0 || from >= list.length || to < 0 || to >= list.length) return;
+  const [item] = list.splice(from, 1);
+  list.splice(to, 0, item);
+}
+
 // Point a window at a project, creating the project if it is new.
 export function attachWindow(state, windowId, name) {
   state.windows[windowId] = name;
