@@ -11,6 +11,7 @@ const CLICK_DELAY = 220; // ms to wait for a second click before copying
 const DAYS = ['mon', 'tue', 'wed', 'thu']; // working days in the week strip
 
 const els = {
+  windowLabel: document.getElementById('windowLabel'),
   comboWrap: document.getElementById('comboWrap'),
   projectInput: document.getElementById('projectInput'),
   projectListbox: document.getElementById('projectListbox'),
@@ -485,6 +486,7 @@ async function restoreTab(url) {
 // --- Rendering -------------------------------------------------------------
 
 function renderAll() {
+  renderWindowLabel();
   renderProjectInput();
   renderNotes();
   renderDayCycle();
@@ -606,6 +608,13 @@ function renderDayCycle() {
   if (document.activeElement !== els.dayThemeInput) {
     els.dayThemeInput.value = (state.dayThemes && state.dayThemes[cycleDay]) || '';
   }
+}
+
+// Show which window this is: the current project as a bold label beside the
+// app name, and in the native side-panel header (the document title).
+function renderWindowLabel() {
+  els.windowLabel.textContent = currentProject || 'No project';
+  document.title = currentProject ? `Sidebar Sid — ${currentProject}` : 'Sidebar Sid';
 }
 
 function renderProjectInput() {
