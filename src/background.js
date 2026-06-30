@@ -13,3 +13,10 @@ chrome.action.onClicked.addListener((tab) => {
   if (tab.windowId == null) return;
   chrome.sidePanel.open({ windowId: tab.windowId });
 });
+
+// Dev convenience: a shortcut (Ctrl/Cmd+Shift+U) reloads the extension, which
+// re-reads the files from disk for an unpacked install — no trip to
+// chrome://extensions to click Reload.
+chrome.commands.onCommand.addListener((command) => {
+  if (command === 'reload-extension') chrome.runtime.reload();
+});

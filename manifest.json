@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Sidebar Sid",
-  "version": "1.15.0",
+  "version": "1.16.0",
   "description": "A lightweight browser context layer. Answer: what was I working on?",
   "permissions": [
     "sidePanel",
@@ -18,6 +18,13 @@
         "mac": "Command+Shift+Y"
       },
       "description": "Toggle the Sidebar Sid side panel"
+    },
+    "reload-extension": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+U",
+        "mac": "Command+Shift+U"
+      },
+      "description": "Reload the extension (re-reads files from disk)"
     }
   },
   "background": {
