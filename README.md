@@ -12,8 +12,9 @@ It is not a task manager, not a notes app, and not an AI assistant.
   badge tag for the focused window's project (initials or first letters), with the
   full name in the icon's tooltip. (Chrome doesn't let extensions label the tab
   bar itself, so the badge is the closest always-visible indicator.)
-- Top to bottom the panel is: the week strip, the scratchpad, then the project
-  bar, window notes, and removed tabs.
+- The panel is two white cards on a faint background: a **global (chrome) card**
+  on top (day theme, planner, distractions — shared across all windows) and a
+  **per-project (window) card** below (project bar, notes, removed tabs).
 - The header is a single project combobox: click to see all projects, type to
   filter, and Enter on a new name creates it. Typing a name that already exists
   switches to it (never merges). Header icons act on the current project:

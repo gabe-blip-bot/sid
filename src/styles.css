@@ -1,6 +1,7 @@
 :root {
   color-scheme: light dark;
   --bg: #ffffff;
+  --page: #f3f4f6; /* faint neutral behind the white cards */
   --text: #1f1f1f;
   --muted: #5f6368;
   --border: #dadce0;
@@ -17,6 +18,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #1f1f1f;
+    --page: #161616; /* darker than the cards so they read as modules */
     --text: #e3e3e3;
     --muted: #9aa0a6;
     --border: #444746;
@@ -42,7 +44,7 @@ body {
 }
 
 body {
-  background: var(--bg);
+  background: var(--page);
   color: var(--text);
   font: 13px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -56,11 +58,15 @@ body {
   overflow-y: auto;
 }
 
-/* Chrome (global, top) panel and window (per-project) panel, divided */
+/* Chrome (global, top) and window (per-project) panels as two white cards */
 .chrome-panel {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding: 13px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
 }
 
 .window-panel {
@@ -69,8 +75,10 @@ body {
   gap: 12px;
   flex: 1;
   min-height: 0;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
+  padding: 13px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
 }
 
 .topbar {
