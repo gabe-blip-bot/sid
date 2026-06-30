@@ -5,12 +5,14 @@
 //   {
 //     projects: {
 //       [name]: {
-//         notes: string,
+//         notes: string[],                                          // item list
 //         workspace: { savedAt: number, tabs: [{ title, url }] },   // optional
-//         removedTabs: [{ title, url, removedAt, lastSeenAt }]       // optional
+//         removedTabs: [{ title, url, removedAt, lastSeenAt }],      // optional
+//         archived: true                                            // optional
 //       }
 //     },
-//     scratchpad:  string,                     // shared across every window
+//     distractions: string[],                  // global quick-capture list
+//     dayThemes:   { mon, tue, wed, thu },      // global day themes
 //     windows:     { [windowId]: projectName }, // which project each window shows
 //     openWindows: { [projectName]: windowId }  // window hosting a project's workspace
 //   }
@@ -18,7 +20,7 @@
 export function emptyState() {
   return {
     projects: {},
-    scratchpad: '',
+    distractions: [],
     windows: {},
     openWindows: {},
     dayThemes: { mon: '', tue: '', wed: '', thu: '' }
@@ -31,6 +33,11 @@ export function normaliseState(loaded) {
   const state = { ...emptyState(), ...(loaded || {}) };
   // Ensure all four working-day keys exist so older saved state is upgraded.
   state.dayThemes = { mon: '', tue: '', wed: '', thu: '', ...(state.dayThemes || {}) };
+  // Migrate the old global scratchpad string into the distractions list.
+  const rawDistractions =
+    loaded && loaded.distractions !== undefined ? loaded.distractions : loaded && loaded.scratchpad;
+  state.distractions = toNoteList(rawDistractions);
+  delete state.scratchpad;
   for (const name of Object.keys(state.projects)) {
     state.projects[name].notes = toNoteList(state.projects[name].notes);
   }
@@ -117,20 +124,17 @@ export function setDayTheme(state, dayKey, text) {
   state.dayThemes[dayKey] = text;
 }
 
-// Reorder the theme values across the fixed Mon–Thu slots: move the theme at
-// `fromIndex` to `toIndex`, shifting the others (drag-to-shuffle).
-export function moveDayTheme(state, fromIndex, toIndex) {
-  const order = ['mon', 'tue', 'wed', 'thu'];
-  if (fromIndex < 0 || toIndex < 0 || fromIndex > 3 || toIndex > 3 || fromIndex === toIndex) {
-    return;
-  }
-  if (!state.dayThemes) state.dayThemes = { mon: '', tue: '', wed: '', thu: '' };
-  const values = order.map((k) => state.dayThemes[k] || '');
-  const [moved] = values.splice(fromIndex, 1);
-  values.splice(toIndex, 0, moved);
-  order.forEach((k, i) => {
-    state.dayThemes[k] = values[i];
-  });
+// --- Distractions (a global quick-capture list) ----------------------------
+
+export function addDistraction(state, text) {
+  const item = text.trim();
+  if (!item) return;
+  if (!Array.isArray(state.distractions)) state.distractions = [];
+  state.distractions.push(item);
+}
+
+export function removeDistraction(state, index) {
+  if (Array.isArray(state.distractions)) state.distractions.splice(index, 1);
 }
 
 // Point a window at a project, creating the project if it is new.

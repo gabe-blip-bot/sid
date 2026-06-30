@@ -20,17 +20,17 @@ It is not a task manager, not a notes app, and not an AI assistant.
   **save** (capture this window's tabs), **pencil** (rename in place), **add a
   window note**, and **archive**.
 - **Notes** — a list of short window notes for the project. The **add-note icon**
-  in the header creates a new note in the list, ready to type. Click any note to
-  edit it in place. Each item has a **tick** that completes and removes it and a
-  **copy** button. Below the list, **copy-all** and **complete-all** icons copy
-  every note (one per line) or clear the list.
-- **Week strip** — a quiet Mon–Thu reminder of each working day's theme, shown in
-  two columns (Mon/Tue, Wed/Thu) to save height. Each day has an editable theme
-  field; it's global (not per project) and autosaves. Drag a row by its grip to
-  reorder the themes. Today's row is highlighted on Mon–Thu. Purely passive.
-- **Scratchpad** — global freeform text, shared across every window. Starts as a
-  single line, auto-grows as you type (up to ~40% of the panel, then scrolls),
-  and has a drag grip to resize manually.
+  in the header creates a new note in the list, ready to type (just a line and a
+  cursor). Click any note to edit it in place. Each item has a **tick** that
+  completes and removes it and a **copy** button. Below the list, **copy-all** and
+  **complete-all** icons copy every note (one per line) or clear the list.
+- **Day theme** — a button that cycles through the working days (Mon→Tue→Wed→Thu)
+  with a theme field beside it. It's global (not per project) and autosaves; the
+  button defaults to today and is highlighted when showing today. Purely passive.
+- **Distractions** — a global quick-capture line at the bottom of the panel. Type
+  a distraction and press Enter; it's saved and tucked away into a collapsible
+  **Distractions (N)** list (expand it to review or remove items). Shared across
+  every window.
 - **Save** (header icon) captures the current window's reopenable tabs
   (title + URL, in order) with a timestamp as the project's snapshot. Its status
   dot is green when the snapshot matches the window's current tabs and red when

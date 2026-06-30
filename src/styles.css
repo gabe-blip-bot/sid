@@ -62,15 +62,11 @@ body {
   gap: 8px;
 }
 
-.field-group {
-  display: flex;
-  flex-direction: column;
-}
 
-
-.input,
-.textarea {
+.input {
   width: 100%;
+  height: 40px;
+  padding: 11px 12px;
   border: 1px solid transparent;
   border-radius: 10px;
   background: var(--button);
@@ -79,32 +75,32 @@ body {
   outline: none;
 }
 
-.input {
-  height: 40px;
-  padding: 11px 12px;
-}
-
 .project {
   font-weight: 700;
 }
 
-.textarea {
-  min-height: 38px;
-  line-height: 1.5;
-  padding: 8px 12px;
-  resize: vertical;
-  overflow-y: hidden;
-}
-
-.input:hover,
-.textarea:hover {
+.input:hover {
   background: var(--button-hover);
 }
 
-.input:focus,
-.textarea:focus {
+.input:focus {
   background: var(--button);
   border-color: var(--border);
+}
+
+/* Borderless line input — just a line with a cursor */
+.line-input {
+  width: 100%;
+  padding: 2px 2px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  outline: none;
+}
+
+.line-input::placeholder {
+  color: var(--muted);
 }
 
 /* Project bar: combobox + rename/archive icons */
@@ -210,8 +206,6 @@ body {
 
 .note-edit-input {
   flex: 1;
-  height: 28px;
-  padding: 4px 8px;
 }
 
 /* Bulk action icons, below the list */
@@ -313,56 +307,32 @@ body {
   box-shadow: none;
 }
 
-/* Week theme strip (Mon–Thu): two columns to save height */
+/* Day theme: a button that cycles the day, with the theme field beside it */
 .week-strip {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto auto;
-  grid-auto-flow: column;
-  column-gap: 12px;
-  row-gap: 2px;
-}
-
-.day-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 1px 2px;
+  gap: 8px;
+}
+
+.day-cycle {
+  flex: none;
+  min-width: 46px;
+  height: 28px;
+  padding: 0 10px;
   border-radius: 8px;
-}
-
-.day-row.is-today {
   background: var(--button);
-}
-
-.day-row.is-today .day-label {
   color: var(--text);
+  font: inherit;
+  font-size: 12px;
   font-weight: 600;
 }
 
-.day-row.drag-over {
-  outline: 2px dashed var(--border);
-  outline-offset: -2px;
+.day-cycle:hover {
+  background: var(--button-hover);
 }
 
-.day-grip {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  color: var(--muted);
-  opacity: 0.5;
-  cursor: grab;
-}
-
-.day-grip:active {
-  cursor: grabbing;
-}
-
-.day-label {
-  flex: none;
-  width: 26px;
-  color: var(--muted);
-  font-size: 12px;
+.day-cycle.is-today {
+  color: var(--focus);
 }
 
 .day-theme {
@@ -451,6 +421,58 @@ body {
 .removed-item button {
   flex: none;
   padding: 6px 12px;
+}
+
+/* Distractions: quick-capture line + collapsible list */
+.distractions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.distractions-box > summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12px;
+  list-style: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--button);
+}
+
+.distractions-box > summary::-webkit-details-marker {
+  display: none;
+}
+
+.distractions-box > summary::marker {
+  content: '';
+}
+
+.distractions-box > summary:hover {
+  background: var(--button-hover);
+}
+
+.distraction-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+
+.distraction-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.distraction-item + .distraction-item {
+  border-top: 1px solid var(--border);
+}
+
+.distraction-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .status {
