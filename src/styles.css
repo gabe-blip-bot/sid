@@ -420,6 +420,7 @@ body {
   display: flex;
   align-items: flex-start;
   gap: 4px;
+  cursor: grab;
   padding: 5px 4px 5px 8px;
   border-radius: 8px;
   background: var(--button);
@@ -461,9 +462,21 @@ body {
   opacity: 1;
 }
 
+/* Drag-and-drop reorder feedback */
+.planner-item.dragging {
+  opacity: 0.4;
+  cursor: grabbing;
+}
+
+.planner-item.drag-over {
+  outline: 2px dashed var(--focus);
+  outline-offset: -2px;
+}
+
 .tile-edit {
   flex: 1;
   min-width: 0;
+  cursor: text;
 }
 
 .tile-input {

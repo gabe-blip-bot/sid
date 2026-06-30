@@ -37,7 +37,8 @@ It is not a task manager, not a notes app, and not an AI assistant.
   task actually exists, so only created tasks are numbered 1..N). Each task shows
   its **number** on the left; click it to complete the task — the number turns
   into a **tick** and the text strikes through (click again to undo). Click a
-  tile's text to edit it in place. Schedule tiles are plain (no number, no strike).
+  tile's text to edit it in place, or **drag a tile to reorder** it within its
+  column. Schedule tiles are plain (no number, no strike).
 - **Distractions** — one global quick-capture box at the bottom of the panel.
   Click it, type a distraction, and press Enter; it's saved and the box clears
   (nothing expands). Once you've captured something, a **count + chevron** appears

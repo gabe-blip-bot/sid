@@ -47,6 +47,7 @@ let saveTimer = null;
 let cycleDay = 'mon'; // which day the theme control is showing
 let editingTile = null; // { key, index } of the planner tile being edited, or null
 let distractionsOpen = false; // whether the distractions review list is expanded
+let dragSource = null; // { key, index } of the planner tile being dragged, or null
 
 // Combobox state.
 let comboOpen = false;
@@ -563,8 +564,52 @@ function renderTileColumn(listEl, items, key, numbered, completable) {
       li.appendChild(label);
     }
 
+    attachTileDrag(li, key, i);
     listEl.appendChild(li);
   });
+}
+
+// Drag-and-drop reorder within a column. Editing a tile disables its dragging so
+// text selection works; drops are only accepted within the same column.
+function attachTileDrag(li, key, index) {
+  const editingThis = editingTile && editingTile.key === key && editingTile.index === index;
+  li.draggable = !editingThis;
+
+  li.addEventListener('dragstart', (e) => {
+    dragSource = { key, index };
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+    li.classList.add('dragging');
+  });
+  li.addEventListener('dragend', () => {
+    dragSource = null;
+    li.classList.remove('dragging');
+    listFor(key).forEach((el) => el.classList.remove('drag-over'));
+  });
+  li.addEventListener('dragover', (e) => {
+    if (!dragSource || dragSource.key !== key) return; // same column only
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    li.classList.add('drag-over');
+  });
+  li.addEventListener('dragleave', () => li.classList.remove('drag-over'));
+  li.addEventListener('drop', (e) => {
+    if (!dragSource || dragSource.key !== key) return;
+    e.preventDefault();
+    const from = dragSource.index;
+    li.classList.remove('drag-over');
+    if (from !== index) {
+      projects.moveListItem(state, key, from, index);
+      scheduleSave();
+      renderPlanner();
+    }
+  });
+}
+
+// The current tile elements for a column, used to clear drag highlights.
+function listFor(key) {
+  const listEl = key === 'tasks' ? els.taskList : els.scheduleList;
+  return Array.from(listEl.children);
 }
 
 function toggleTile(key, index) {
