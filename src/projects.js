@@ -12,7 +12,7 @@
 //       }
 //     },
 //     distractions: string[],                  // global quick-capture list
-//     dayThemes:   { mon, tue, wed, thu },      // global day themes
+//     theme:       string,                      // global day-agnostic theme
 //     windows:     { [windowId]: projectName }, // which project each window shows
 //     openWindows: { [projectName]: windowId }  // window hosting a project's workspace
 //   }
@@ -25,7 +25,7 @@ export function emptyState() {
     tasks: [],
     windows: {},
     openWindows: {},
-    dayThemes: { mon: '', tue: '', wed: '', thu: '' }
+    theme: ''
   };
 }
 
@@ -33,8 +33,14 @@ export function emptyState() {
 // and migrate each project's notes to a list of item strings.
 export function normaliseState(loaded) {
   const state = { ...emptyState(), ...(loaded || {}) };
-  // Ensure all four working-day keys exist so older saved state is upgraded.
-  state.dayThemes = { mon: '', tue: '', wed: '', thu: '', ...(state.dayThemes || {}) };
+  // Migrate the old per-day themes into a single day-agnostic theme: take the
+  // first non-empty day if no single theme was saved.
+  if (loaded && typeof loaded.theme !== 'string' && loaded.dayThemes) {
+    const d = loaded.dayThemes;
+    state.theme = d.mon || d.tue || d.wed || d.thu || '';
+  }
+  if (typeof state.theme !== 'string') state.theme = '';
+  delete state.dayThemes;
   // Migrate the old global scratchpad string into the distractions list.
   const rawDistractions =
     loaded && loaded.distractions !== undefined ? loaded.distractions : loaded && loaded.scratchpad;
@@ -141,10 +147,9 @@ export function clearNotes(state, name) {
   if (project) project.notes = [];
 }
 
-// Set a working-day theme (dayKey is one of mon|tue|wed|thu). Global.
-export function setDayTheme(state, dayKey, text) {
-  if (!state.dayThemes) state.dayThemes = { mon: '', tue: '', wed: '', thu: '' };
-  state.dayThemes[dayKey] = text;
+// Set the single global day-agnostic theme.
+export function setTheme(state, text) {
+  state.theme = text;
 }
 
 // --- Distractions (a global quick-capture list) ----------------------------
