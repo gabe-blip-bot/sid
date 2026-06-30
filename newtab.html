@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sidebar Sid</title>
+    <link rel="stylesheet" href="src/styles.css" />
+    <link rel="stylesheet" href="src/newtab.css" />
+  </head>
+  <body>
+    <main class="newtab">
+      <header class="nt-header">
+        <div id="dayDate" class="nt-day" aria-label="Today"></div>
+        <input
+          id="dayThemeInput"
+          class="day-theme nt-theme"
+          type="text"
+          placeholder="Theme"
+          autocomplete="off"
+          aria-label="Theme"
+        />
+      </header>
+
+      <section class="planner nt-planner">
+        <div class="planner-col">
+          <div class="col-head nt-col-label">Schedule</div>
+          <ul id="scheduleList" class="tile-list bulleted"></ul>
+          <input
+            id="scheduleInput"
+            class="tile-input"
+            type="text"
+            placeholder="Schedule&hellip;"
+            autocomplete="off"
+            aria-label="Add to schedule"
+          />
+        </div>
+        <div class="planner-col">
+          <div class="col-head nt-col-label">Tasks</div>
+          <ul id="taskList" class="tile-list numbered"></ul>
+          <input
+            id="taskInput"
+            class="tile-input"
+            type="text"
+            placeholder="Task&hellip;"
+            autocomplete="off"
+            aria-label="Add a task"
+          />
+        </div>
+      </section>
+
+      <section class="distractions nt-distractions">
+        <div class="nt-col-label">Distractions</div>
+        <div class="distraction-bar">
+          <input
+            id="distractionInput"
+            class="distraction-box"
+            type="text"
+            placeholder="Distractions"
+            autocomplete="off"
+            aria-label="Add a distraction"
+          />
+          <button
+            id="distractionToggle"
+            class="distraction-toggle"
+            type="button"
+            title="Show distractions"
+            aria-label="Show distractions"
+            aria-expanded="false"
+            hidden
+          >
+            <span id="distractionCount" class="distraction-count">0</span>
+            <svg class="chev" viewBox="0 0 24 24" width="14" height="14" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+        </div>
+        <ul id="distractionList" class="distraction-list" hidden></ul>
+      </section>
+    </main>
+
+    <script type="module" src="src/newtab.js"></script>
+  </body>
+</html>
