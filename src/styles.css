@@ -324,32 +324,6 @@ body {
   padding: 1px 0;
 }
 
-/* Status dot on the save icon: green = saved, red = unsaved changes */
-#saveProjectButton {
-  position: relative;
-}
-
-#saveProjectButton::after {
-  content: '';
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: transparent;
-  box-shadow: 0 0 0 1.5px var(--bg);
-}
-
-#saveProjectButton.is-dirty::after {
-  background: var(--danger);
-}
-
-#saveProjectButton:disabled::after {
-  background: transparent;
-  box-shadow: none;
-}
-
 /* Column headers above the planner: day/date (left), theme box (right) */
 .col-head {
   height: 28px;
