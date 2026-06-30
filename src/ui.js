@@ -8,7 +8,6 @@ import * as projects from './projects.js';
 const SAVE_DELAY = 400; // ms to debounce autosave writes
 const FLASH_MS = 900; // how long a "Copied" confirmation shows
 const CLICK_DELAY = 220; // ms to wait for a second click before copying
-const DAYS = ['mon', 'tue', 'wed', 'thu']; // working days in the week strip
 
 const els = {
   comboWrap: document.getElementById('comboWrap'),
@@ -23,7 +22,7 @@ const els = {
   noteList: document.getElementById('noteList'),
   noteComposeItem: document.getElementById('noteComposeItem'),
   noteComposeRow: document.getElementById('noteComposeRow'),
-  dayCycleButton: document.getElementById('dayCycleButton'),
+  dayDate: document.getElementById('dayDate'),
   dayThemeInput: document.getElementById('dayThemeInput'),
   scheduleList: document.getElementById('scheduleList'),
   scheduleInput: document.getElementById('scheduleInput'),
@@ -44,7 +43,7 @@ let currentProject = null;
 let saveTimer = null;
 
 // Day-cycle + planner tile edit state.
-let cycleDay = 'mon'; // which day the theme control is showing
+let themeDay = 'mon'; // the day key the theme box edits (today, Mon–Thu)
 let editingTile = null; // { key, index } of the planner tile being edited, or null
 let distractionsOpen = false; // whether the distractions review list is expanded
 let dragSource = null; // { key, index } of the planner tile being dragged, or null
@@ -85,8 +84,8 @@ async function init() {
 
   if (dirty) await storage.save(state);
 
-  // Start the day-theme control on today (Mon–Thu), else Monday.
-  cycleDay = { 1: 'mon', 2: 'tue', 3: 'wed', 4: 'thu' }[new Date().getDay()] || 'mon';
+  // The theme box edits today's theme (Mon–Thu), falling back to Monday.
+  themeDay = { 1: 'mon', 2: 'tue', 3: 'wed', 4: 'thu' }[new Date().getDay()] || 'mon';
 
   renderAll();
   bindEvents();
@@ -131,14 +130,9 @@ function bindEvents() {
   els.copyAllButton.addEventListener('click', copyAllNotes);
   els.completeAllButton.addEventListener('click', completeAllNotes);
 
-  // Day theme: the button cycles Mon→Tue→Wed→Thu; the field edits that day.
-  els.dayCycleButton.addEventListener('click', () => {
-    cycleDay = DAYS[(DAYS.indexOf(cycleDay) + 1) % DAYS.length];
-    renderDayCycle();
-    els.dayThemeInput.focus();
-  });
+  // Day theme: the field edits today's theme (above the task column).
   els.dayThemeInput.addEventListener('input', () => {
-    projects.setDayTheme(state, cycleDay, els.dayThemeInput.value);
+    projects.setDayTheme(state, themeDay, els.dayThemeInput.value);
     scheduleSave();
   });
 
@@ -491,7 +485,7 @@ function renderAll() {
   document.title = currentProject ? `${currentProject} — Sid` : 'Sid';
   renderProjectInput();
   renderNotes();
-  renderDayCycle();
+  renderDayHeader();
   renderPlanner();
   renderDistractions();
   renderSaveStatus();
@@ -645,14 +639,16 @@ function cancelTileEdit() {
   renderPlanner();
 }
 
-// The day-cycle button shows the selected day; the field edits that day's theme.
-function renderDayCycle() {
-  const labels = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu' };
-  const todayKey = { 1: 'mon', 2: 'tue', 3: 'wed', 4: 'thu' }[new Date().getDay()];
-  els.dayCycleButton.textContent = labels[cycleDay];
-  els.dayCycleButton.classList.toggle('is-today', cycleDay === todayKey);
+// The day/date label sits above the schedule; the theme box (above the tasks)
+// edits today's theme.
+function renderDayHeader() {
+  els.dayDate.textContent = new Date().toLocaleDateString(undefined, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short'
+  });
   if (document.activeElement !== els.dayThemeInput) {
-    els.dayThemeInput.value = (state.dayThemes && state.dayThemes[cycleDay]) || '';
+    els.dayThemeInput.value = (state.dayThemes && state.dayThemes[themeDay]) || '';
   }
 }
 

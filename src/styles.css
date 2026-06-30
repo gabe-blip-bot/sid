@@ -333,36 +333,19 @@ body {
   box-shadow: none;
 }
 
-/* Day theme: a button that cycles the day, with the theme field beside it */
-.week-strip {
+/* Column headers above the planner: day/date (left), theme box (right) */
+.col-head {
+  height: 28px;
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.day-cycle {
-  flex: none;
-  min-width: 46px;
-  height: 28px;
-  padding: 0 10px;
-  border-radius: 8px;
-  background: var(--button);
-  color: var(--text);
-  font: inherit;
+  padding: 4px 8px;
   font-size: 12px;
   font-weight: 600;
-}
-
-.day-cycle:hover {
-  background: var(--button-hover);
-}
-
-.day-cycle.is-today {
-  color: var(--focus);
+  color: var(--text);
 }
 
 .day-theme {
-  flex: 1;
+  width: 100%;
   min-width: 0;
   height: 28px;
   padding: 4px 8px;
@@ -372,6 +355,7 @@ body {
   color: var(--text);
   font: inherit;
   font-size: 12px;
+  font-weight: 600;
   outline: none;
 }
 

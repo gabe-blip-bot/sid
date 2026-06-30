@@ -115,14 +115,9 @@
       </div>
 
       <div class="chrome-panel">
-      <section class="week-strip" aria-label="Day theme">
-        <button id="dayCycleButton" class="day-cycle" type="button" aria-label="Cycle day">Mon</button>
-        <input id="dayThemeInput" class="day-theme" type="text" placeholder="Theme"
-          autocomplete="off" aria-label="Day theme" />
-      </section>
-
       <section class="planner">
         <div class="planner-col">
+          <div id="dayDate" class="col-head" aria-label="Today"></div>
           <ul id="scheduleList" class="tile-list"></ul>
           <input
             id="scheduleInput"
@@ -134,6 +129,8 @@
           />
         </div>
         <div class="planner-col">
+          <input id="dayThemeInput" class="day-theme" type="text" placeholder="Theme"
+            autocomplete="off" aria-label="Day theme" />
           <ul id="taskList" class="tile-list"></ul>
           <input
             id="taskInput"
