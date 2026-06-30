@@ -31,12 +31,11 @@ It is not a task manager, not a notes app, and not an AI assistant.
   (with a brief confirmation), **double-click** to delete it. Below the list,
   **copy-all** and **complete-all** icons copy every note (one per line) or clear
   the list.
-- **Day theme** — a button that cycles through the working days (Mon→Tue→Wed→Thu)
-  with a theme field beside it. It's global (not per project) and autosaves; the
-  button defaults to today and is highlighted when showing today. Purely passive.
 - **Planner** — two global columns: a free-form **schedule** (left) and an
-  auto-numbered **task** list (right). Type in a column's input and press Enter to
-  add a tile; the next empty input is ready immediately (no number shown until a
+  auto-numbered **task** list (right). Above the schedule sits today's **day and
+  date**; above the tasks sits a **theme** box (a short label for the day, global
+  and autosaved). Type in a column's input and press Enter to add a tile; the next
+  empty input is ready immediately (no number shown until a
   task actually exists, so only created tasks are numbered 1..N). Each task shows
   its **number** on the left; click it to complete the task — the number turns
   into a **tick** and the text strikes through (click again to undo). Click a
