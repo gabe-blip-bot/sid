@@ -17,8 +17,6 @@ const els = {
   saveProjectButton: document.getElementById('saveProjectButton'),
   renameButton: document.getElementById('renameButton'),
   archiveButton: document.getElementById('archiveButton'),
-  copyAllButton: document.getElementById('copyAllButton'),
-  completeAllButton: document.getElementById('completeAllButton'),
   noteList: document.getElementById('noteList'),
   noteComposeItem: document.getElementById('noteComposeItem'),
   noteComposeRow: document.getElementById('noteComposeRow'),
@@ -42,10 +40,7 @@ let windowId = null;
 let currentProject = null;
 let saveTimer = null;
 
-// Day-cycle + planner tile edit state.
-let editingTile = null; // { key, index } of the planner tile being edited, or null
 let distractionsOpen = false; // whether the distractions review list is expanded
-let dragSource = null; // { key, index } of the planner tile being dragged, or null
 
 // Combobox state.
 let comboOpen = false;
@@ -123,8 +118,6 @@ function bindEvents() {
       commitCompose();
     }
   });
-  els.copyAllButton.addEventListener('click', copyAllNotes);
-  els.completeAllButton.addEventListener('click', completeAllNotes);
 
   // Theme: a single day-agnostic label (above the task column).
   els.dayThemeInput.addEventListener('input', () => {
@@ -422,22 +415,7 @@ async function copyText(text, button) {
   }
 }
 
-// Copy all notes (one per line) without removing them.
-function copyAllNotes() {
-  const items = projects.getProject(state, currentProject).notes || [];
-  if (!items.length) return;
-  copyText(items.join('\n'), els.copyAllButton);
-}
-
-// Complete all = clear the list.
-function completeAllNotes() {
-  if (!currentProject) return;
-  projects.clearNotes(state, currentProject);
-  scheduleSave();
-  renderNotes();
-}
-
-// Briefly flash a button green to confirm a copy.
+// Briefly flash a line green to confirm a copy.
 function flash(button) {
   if (button.dataset.flashing) return;
   button.dataset.flashing = '1';
@@ -499,139 +477,47 @@ function addOnEnter(event, input, key) {
   renderPlanner();
 }
 
-// Planner: the schedule list (left) and the auto-numbered task list (right).
+// Planner: schedule (left) and tasks (right) as plain text lists. Bullets and
+// numbers are presentation-only (CSS); each line copies on single-click and
+// deletes on double-click — the same gesture notes use.
 function renderPlanner() {
-  // Schedule: plain editable tiles (no tick, no strike). Tasks: completable.
-  renderTileColumn(els.scheduleList, state.schedule || [], 'schedule', false, false);
-  renderTileColumn(els.taskList, state.tasks || [], 'tasks', true, true);
+  renderTileColumn(els.scheduleList, state.schedule || [], 'schedule');
+  renderTileColumn(els.taskList, state.tasks || [], 'tasks');
 }
 
-function renderTileColumn(listEl, items, key, numbered, completable) {
+function renderTileColumn(listEl, items, key) {
   listEl.innerHTML = '';
   items.forEach((item, i) => {
     const li = document.createElement('li');
-    li.className = `planner-item${completable && item.done ? ' done' : ''}`;
+    li.className = 'planner-item';
+    li.textContent = item.text;
+    li.title = 'Click to copy, double-click to delete';
 
-    if (completable) {
-      // One control in the left slot: shows the task number, and turns into a
-      // tick once completed. Clicking it toggles done.
-      const control = document.createElement('button');
-      control.type = 'button';
-      control.className = 'note-btn tick';
-      control.title = item.done ? 'Mark not done' : 'Complete';
-      control.setAttribute('aria-label', control.title);
-      if (!item.done && numbered) {
-        control.classList.add('tile-num');
-        control.textContent = `${i + 1}.`;
-      } else {
-        control.innerHTML = icon('M20 6 9 17l-5-5');
+    // Disambiguate single (copy) from double (delete) with a short timer.
+    let clickTimer = null;
+    li.addEventListener('click', () => {
+      if (clickTimer) return; // second click handled by dblclick
+      clickTimer = setTimeout(() => {
+        clickTimer = null;
+        copyText(item.text, li);
+      }, CLICK_DELAY);
+    });
+    li.addEventListener('dblclick', () => {
+      if (clickTimer) {
+        clearTimeout(clickTimer);
+        clickTimer = null;
       }
-      control.addEventListener('click', () => toggleTile(key, i));
-      li.appendChild(control);
-    }
+      deleteTile(key, i);
+    });
 
-    if (editingTile && editingTile.key === key && editingTile.index === i) {
-      const input = document.createElement('textarea');
-      input.id = 'tileEditInput';
-      input.className = 'note-composer tile-edit';
-      input.rows = 1;
-      input.value = item.text;
-      input.addEventListener('input', () => autoGrow(input));
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          commitTileEdit(key, i, input.value);
-        } else if (e.key === 'Escape') {
-          e.preventDefault();
-          cancelTileEdit();
-        }
-      });
-      input.addEventListener('blur', () => commitTileEdit(key, i, input.value));
-      li.appendChild(input);
-    } else {
-      const label = document.createElement('span');
-      label.className = 'planner-text';
-      label.textContent = item.text;
-      label.title = 'Click to edit';
-      label.addEventListener('click', () => startTileEdit(key, i));
-      li.appendChild(label);
-    }
-
-    attachTileDrag(li, key, i);
     listEl.appendChild(li);
   });
 }
 
-// Drag-and-drop reorder within a column. Editing a tile disables its dragging so
-// text selection works; drops are only accepted within the same column.
-function attachTileDrag(li, key, index) {
-  const editingThis = editingTile && editingTile.key === key && editingTile.index === index;
-  li.draggable = !editingThis;
-
-  li.addEventListener('dragstart', (e) => {
-    dragSource = { key, index };
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', String(index));
-    li.classList.add('dragging');
-  });
-  li.addEventListener('dragend', () => {
-    dragSource = null;
-    li.classList.remove('dragging');
-    listFor(key).forEach((el) => el.classList.remove('drag-over'));
-  });
-  li.addEventListener('dragover', (e) => {
-    if (!dragSource || dragSource.key !== key) return; // same column only
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    li.classList.add('drag-over');
-  });
-  li.addEventListener('dragleave', () => li.classList.remove('drag-over'));
-  li.addEventListener('drop', (e) => {
-    if (!dragSource || dragSource.key !== key) return;
-    e.preventDefault();
-    const from = dragSource.index;
-    li.classList.remove('drag-over');
-    if (from !== index) {
-      projects.moveListItem(state, key, from, index);
-      scheduleSave();
-      renderPlanner();
-    }
-  });
-}
-
-// The current tile elements for a column, used to clear drag highlights.
-function listFor(key) {
-  const listEl = key === 'tasks' ? els.taskList : els.scheduleList;
-  return Array.from(listEl.children);
-}
-
-function toggleTile(key, index) {
-  projects.toggleListItem(state, key, index);
+// Double-click a line to delete it (a finished task is just removed).
+function deleteTile(key, index) {
+  projects.removeFromList(state, key, index);
   scheduleSave();
-  renderPlanner();
-}
-
-function startTileEdit(key, index) {
-  editingTile = { key, index };
-  renderPlanner();
-  const input = document.getElementById('tileEditInput');
-  if (input) {
-    autoGrow(input);
-    input.focus();
-    input.select();
-  }
-}
-
-function commitTileEdit(key, index, value) {
-  if (!editingTile || editingTile.key !== key || editingTile.index !== index) return;
-  editingTile = null;
-  projects.editListItem(state, key, index, value);
-  scheduleSave();
-  renderPlanner();
-}
-
-function cancelTileEdit() {
-  editingTile = null;
   renderPlanner();
 }
 
@@ -667,9 +553,7 @@ function renderNotes() {
   const items = bound ? projects.getProject(state, currentProject).notes || [] : [];
 
   els.noteComposeRow.disabled = !bound;
-  els.noteComposeRow.placeholder = bound ? 'Take a note' : 'Pick a project first';
-  els.copyAllButton.disabled = !items.length;
-  els.completeAllButton.disabled = !items.length;
+  els.noteComposeRow.placeholder = bound ? '' : 'Pick a project first';
 
   // Rebuild only the committed rows; the compose row at the end is persistent
   // so in-progress text and focus survive a re-render.
@@ -700,12 +584,6 @@ function renderNotes() {
 
     els.noteList.insertBefore(item, els.noteComposeItem);
   });
-}
-
-// Build an inline SVG icon from one or more path "d" strings.
-function icon(...paths) {
-  const d = paths.map((p) => `<path d="${p}"/>`).join('');
-  return `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 }
 
 // Resize a textarea to fit its content (so writing wraps across lines).

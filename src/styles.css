@@ -82,13 +82,13 @@ body {
 }
 
 
+/* Project combobox: a plain heading line, not a boxed field */
 .input {
   width: 100%;
-  height: 40px;
-  padding: 11px 12px;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  background: var(--button);
+  height: 32px;
+  padding: 4px 2px;
+  border: none;
+  background: transparent;
   color: var(--text);
   font: inherit;
   outline: none;
@@ -96,28 +96,24 @@ body {
 
 .project {
   font-weight: 700;
+  font-size: 15px;
   color: var(--accent); /* chosen project shown in the icon blue */
 }
 
-.input:hover {
-  background: var(--button-hover);
+.input::placeholder {
+  color: var(--muted);
 }
 
-.input:focus {
-  background: var(--button);
-  border-color: var(--border);
-}
-
-/* Note taker: a borderless, wrapping, auto-growing text area */
+/* Note taker: a borderless, wrapping, auto-growing text line */
 .note-composer {
-  width: 100%;
-  min-height: 26px;
-  padding: 4px 2px;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
   border: none;
   background: transparent;
   color: var(--text);
   font: inherit;
-  line-height: 1.5;
+  line-height: 1.65;
   outline: none;
   resize: none;
   overflow: hidden;
@@ -220,19 +216,10 @@ body {
   font-size: 12px;
 }
 
-/* Notes: a content-height list with the bulk-action toolbar right beneath it */
+/* Notes: an open writing area — bulleted plain lines you type straight into */
 .notes {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-
-/* Bulk action icons, below the list */
-.note-toolbar {
-  display: flex;
-  gap: 2px;
-  padding-top: 4px;
-  border-top: 1px solid var(--border);
 }
 
 .note-list {
@@ -241,66 +228,35 @@ body {
   padding: 0;
 }
 
-/* Committed note: plain text. Single-click copies, double-click deletes. */
+/* Committed note: a plain bulleted line. Single-click copies, double deletes. */
 .note-item {
-  padding: 5px 4px 5px 2px;
-  line-height: 1.5;
+  padding: 1px 0 1px 1.2em;
+  text-indent: -1.2em;
+  line-height: 1.65;
   overflow-wrap: anywhere;
   cursor: pointer;
-  border-radius: 6px;
   user-select: none;
-  transition: background 0.12s ease;
 }
 
-.note-item:hover {
-  background: var(--button-hover);
+.note-item::before,
+.note-compose-item::before {
+  content: '\2022\00a0'; /* "• " */
+  color: var(--muted);
 }
 
 .note-item.copied {
-  background: var(--button-hover);
   color: var(--ok);
 }
 
-.note-item + .note-item,
-.note-item + .note-compose-item {
-  border-top: 1px solid var(--border);
-}
-
-/* The always-present compose row at the end of the list. */
+/* The always-present compose line at the end — just the next bullet to type on. */
 .note-compose-item {
+  display: flex;
+  align-items: baseline;
   padding: 1px 0;
 }
 
-/* Ghost icon buttons that sit quietly until hovered */
-.note-btn {
+.note-compose-item::before {
   flex: none;
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--muted);
-  opacity: 0.7;
-}
-
-.note-btn:hover {
-  background: var(--button-hover);
-  color: var(--text);
-  opacity: 1;
-}
-
-.note-btn svg {
-  width: 14px;
-  height: 14px;
-}
-
-.note-btn.copied {
-  color: var(--ok);
-  opacity: 1;
 }
 
 /* Status dot on the save icon: green = saved, red = unsaved changes */
@@ -338,48 +294,40 @@ body {
   height: 28px;
   display: flex;
   align-items: center;
-  padding: 4px 8px;
-  font-size: 12px;
+  padding: 4px 0;
   font-weight: 600;
   color: var(--text);
 }
 
+/* Theme: a plain header line, no box */
 .day-theme {
   width: 100%;
   min-width: 0;
   height: 28px;
-  padding: 4px 8px;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  padding: 4px 0;
+  border: none;
   background: transparent;
   color: var(--text);
   font: inherit;
-  font-size: 12px;
   font-weight: 600;
   outline: none;
 }
 
-.day-theme:hover {
-  background: var(--button-hover);
+.day-theme::placeholder {
+  color: var(--muted);
 }
 
-.day-theme:focus {
-  background: var(--button);
-  border-color: var(--border);
-}
-
-/* Planner: two equal columns of tiles (schedule | numbered tasks) */
+/* Planner: two columns of plain text lists (schedule bulleted | tasks numbered) */
 .planner {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 12px;
   align-items: start;
 }
 
 .planner-col {
   display: flex;
   flex-direction: column;
-  gap: 4px;
   min-width: 0;
 }
 
@@ -387,85 +335,56 @@ body {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
+.tile-list.numbered {
+  counter-reset: task;
+}
+
+/* A plain text line: single-click copies, double-click deletes. */
 .planner-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 4px;
-  cursor: grab;
-  padding: 5px 4px 5px 8px;
-  border-radius: 8px;
-  background: var(--button);
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-/* Task number shown in the tick slot (until completed, when it becomes a tick) */
-.note-btn.tile-num {
-  font-size: 11px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.planner-text {
-  flex: 1;
-  min-width: 0;
-  padding-top: 2px;
+  line-height: 1.65;
   overflow-wrap: anywhere;
+  cursor: pointer;
+  user-select: none;
 }
 
-.planner-item .note-btn {
-  width: 22px;
-  height: 22px;
+.planner-item.copied {
+  color: var(--ok);
 }
 
-.planner-item .note-btn svg {
-  width: 13px;
-  height: 13px;
+.tile-list.bulleted .planner-item {
+  padding: 1px 0 1px 1.2em;
+  text-indent: -1.2em;
 }
 
-.planner-item.done .planner-text {
-  text-decoration: line-through;
+.tile-list.bulleted .planner-item::before {
+  content: '\2022\00a0'; /* "• " */
   color: var(--muted);
 }
 
-.planner-item.done .note-btn.tick {
-  color: var(--ok);
-  opacity: 1;
+.tile-list.numbered .planner-item {
+  counter-increment: task;
+  padding: 1px 0 1px 1.7em;
+  text-indent: -1.7em;
 }
 
-/* Drag-and-drop reorder feedback */
-.planner-item.dragging {
-  opacity: 0.4;
-  cursor: grabbing;
+.tile-list.numbered .planner-item::before {
+  content: counter(task) '.\00a0';
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 
-.planner-item.drag-over {
-  outline: 2px dashed var(--focus);
-  outline-offset: -2px;
-}
-
-.tile-edit {
-  flex: 1;
-  min-width: 0;
-  cursor: text;
-}
-
+/* Trailing add line: a plain line, not a box */
 .tile-input {
-  flex: 1;
   width: 100%;
   min-width: 0;
-  padding: 6px 8px;
-  border: 1px dashed var(--border);
-  border-radius: 8px;
+  padding: 1px 0;
+  border: none;
   background: transparent;
   color: var(--text);
   font: inherit;
-  font-size: 12px;
+  line-height: 1.65;
   outline: none;
 }
 
@@ -473,20 +392,13 @@ body {
   color: var(--muted);
 }
 
-.tile-input:focus {
-  border-style: solid;
-  background: var(--button);
-}
-
-/* Removed tabs: a soft box, no disclosure arrow */
+/* Removed tabs: a quiet text disclosure, no box or arrow */
 .removed > summary {
   cursor: pointer;
   color: var(--muted);
   font-size: 12px;
   list-style: none;
-  padding: 6px 10px;
-  border-radius: 8px;
-  background: var(--button);
+  padding: 2px 0;
 }
 
 .removed > summary::-webkit-details-marker {
@@ -498,7 +410,7 @@ body {
 }
 
 .removed > summary:hover {
-  background: var(--button-hover);
+  color: var(--text);
 }
 
 .removed-list {
@@ -554,25 +466,19 @@ body {
   display: flex;
   align-items: center;
   gap: 2px;
-  border: 1px dashed var(--border);
-  border-radius: 8px;
+  border: none;
   background: transparent;
-}
-
-.distraction-bar:focus-within {
-  border-style: solid;
-  background: var(--button);
 }
 
 .distraction-box {
   flex: 1;
   min-width: 0;
-  padding: 6px 8px;
+  padding: 1px 0;
   border: none;
   background: transparent;
   color: var(--text);
   font: inherit;
-  font-size: 12px;
+  line-height: 1.65;
   outline: none;
 }
 
