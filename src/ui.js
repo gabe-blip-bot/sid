@@ -432,6 +432,7 @@ function commitCompose() {
   autoGrow(els.noteComposeRow);
   scheduleSave();
   renderNotes(); // rebuilds committed rows only; the compose row keeps focus
+  renderSaveStatus();
 }
 
 // Double-click a note to delete it.
@@ -440,6 +441,7 @@ function deleteNote(index) {
   projects.removeNote(state, currentProject, index);
   scheduleSave();
   renderNotes();
+  renderSaveStatus();
 }
 
 // Backspace at the start of the compose line merges the previous bullet back in
@@ -459,6 +461,7 @@ function pullBackNote(event) {
   autoGrow(els.noteComposeRow);
   els.noteComposeRow.focus();
   els.noteComposeRow.setSelectionRange(prev.length, prev.length);
+  renderSaveStatus();
 }
 
 // Copy every note (one per line) without removing them.
@@ -478,6 +481,7 @@ function clearAllNotes() {
   projects.clearNotes(state, currentProject);
   scheduleSave();
   renderNotes();
+  renderSaveStatus();
 }
 
 // True when the caret sits at the very start of a field, with no selection.
@@ -508,13 +512,16 @@ function flash(button) {
 
 // --- Workspace -------------------------------------------------------------
 
-// Capture this window's reopenable tabs as the project's workspace snapshot.
-// The saving window becomes the project's host window.
+// Capture this window's reopenable tabs as the project's workspace snapshot,
+// plus the notes and name at save time (so the status dot tracks all three). The
+// saving window becomes the project's host window.
 async function saveProject() {
   if (!currentProject) return;
   const tabs = await chrome.tabs.query({ currentWindow: true });
   const reopenable = tabs.filter((t) => projects.isReopenable(t.url));
   const updated = projects.captureWorkspace(activeProject(), reopenable, Date.now());
+  updated.workspace.notes = (updated.notes || []).slice();
+  updated.workspace.name = currentProject;
 
   state.projects[currentProject] = updated;
   projects.setWorkspaceWindow(state, currentProject, windowId);
@@ -797,35 +804,52 @@ function autoGrow(el) {
   el.style.height = `${el.scrollHeight}px`;
 }
 
-// The save icon shows last-saved time on hover and a status dot. It only tracks
-// the saved TABS snapshot — not notes/ideas (those autosave separately): green
-// when the snapshot matches the window's tabs, red when tabs have drifted, and
-// no dot until a snapshot exists.
+// The save icon shows the last-saved time on hover and a single red dot when the
+// project has unsaved changes — to its tabs, name, or notes since the last save.
+// There is no "saved" (green) dot; a clean project shows nothing.
 async function renderSaveStatus() {
   const bound = currentProject !== null;
-  const workspace = bound ? projects.getProject(state, currentProject).workspace : null;
+  const project = bound ? projects.getProject(state, currentProject) : null;
+  const workspace = project ? project.workspace : null;
   els.saveProjectButton.title = !bound
-    ? 'Save project tabs'
+    ? 'Save project'
     : workspace
-    ? `Save project tabs — last saved ${new Date(workspace.savedAt).toLocaleString()}`
-    : 'Save project tabs — not saved yet';
+    ? `Save project — last saved ${new Date(workspace.savedAt).toLocaleString()}`
+    : 'Save project — not saved yet';
 
-  if (!bound || !workspace) {
-    els.saveProjectButton.classList.remove('is-clean', 'is-dirty');
+  els.saveProjectButton.classList.remove('is-clean'); // green dot retired
+  if (!bound) {
+    els.saveProjectButton.classList.remove('is-dirty');
     return;
   }
-  const saved = await isWorkspaceSaved(workspace);
-  els.saveProjectButton.classList.toggle('is-clean', saved);
-  els.saveProjectButton.classList.toggle('is-dirty', !saved);
+  els.saveProjectButton.classList.toggle('is-dirty', await isProjectDirty(project));
 }
 
-// True when the saved snapshot's reopenable URLs match the window's now.
-async function isWorkspaceSaved(workspace) {
-  if (!workspace || !workspace.tabs) return false;
+// The window's reopenable tab URLs right now.
+async function currentReopenableUrls() {
   const tabs = await chrome.tabs.query({ currentWindow: true });
-  const live = tabs.filter((t) => projects.isReopenable(t.url)).map((t) => t.url).sort();
-  const saved = workspace.tabs.map((t) => t.url).sort();
-  return live.length === saved.length && live.every((url, i) => url === saved[i]);
+  return tabs.filter((t) => projects.isReopenable(t.url)).map((t) => t.url);
+}
+
+// True when the project differs from its last save: tabs drifted, the name
+// changed, or the notes changed. A never-saved project is dirty once it has
+// anything worth saving (tabs or notes).
+async function isProjectDirty(project) {
+  const ws = project.workspace;
+  const notes = project.notes || [];
+  const liveTabs = await currentReopenableUrls();
+
+  if (!ws) return liveTabs.length > 0 || notes.length > 0;
+  if (ws.name !== currentProject) return true;
+
+  const savedNotes = ws.notes || [];
+  if (savedNotes.length !== notes.length || savedNotes.some((n, i) => n !== notes[i])) {
+    return true;
+  }
+
+  const saved = (ws.tabs || []).map((t) => t.url).sort();
+  const live = liveTabs.slice().sort();
+  return live.length !== saved.length || live.some((url, i) => url !== saved[i]);
 }
 
 function renderRemoved() {
