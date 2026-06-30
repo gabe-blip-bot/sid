@@ -26,13 +26,13 @@ It is not a task manager, not a notes app, and not an AI assistant.
   (rename in place), and **archive**.
   The whole panel is styled like a plain written document — no tiles, boxes, or
   list buttons; you type straight onto lines.
-- **Notes** — an open, bulleted scratchpad that behaves like a small text editor.
-  The bottom line is always an empty bullet you write on: **Enter** commits it as a
-  bulleted note (**Shift+Enter** inserts a newline); **Backspace** at the very start
-  of the write-line pulls the previous bullet back in to edit it. Committed notes
-  are plain bulleted text — **single-click** to copy (brief confirmation),
-  **double-click** to delete. Beneath the lowest bullet, **copy-all** and
-  **clear-all** icons copy every note (one per line) or empty the list.
+- **Notes** — a raw notepad that behaves like a small text editor. The bottom line
+  is always an empty line you write on: **Enter** commits it (**Shift+Enter**
+  inserts a newline); **Backspace** at the very start of the write-line pulls the
+  previous line back in to edit it. Committed lines are plain text; **hover** a line
+  to reveal **copy** and **clear** buttons for it. Beneath the lowest line,
+  **copy-all** and **clear-all** icons copy every note (one per line) or empty the
+  list.
 - **Planner** — two global columns: a plain-text **schedule** (left, no bullets)
   and a numbered **task** list (right). Above the schedule sits today's **day and
   date**; above the tasks sits a **theme** line (a short global label, autosaved).

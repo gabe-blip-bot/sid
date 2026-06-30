@@ -9,6 +9,11 @@ const SAVE_DELAY = 400; // ms to debounce autosave writes
 const FLASH_MS = 900; // how long a "Copied" confirmation shows
 const CLICK_DELAY = 220; // ms to wait for a second click before copying
 
+const SVG_OPEN =
+  '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+const ICON_COPY = `${SVG_OPEN}<path d="M9 9h11v11H9z"/><path d="M5 15H4V4h11v1"/></svg>`;
+const ICON_CLEAR = `${SVG_OPEN}<path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+
 const els = {
   comboWrap: document.getElementById('comboWrap'),
   projectInput: document.getElementById('projectInput'),
@@ -658,9 +663,9 @@ function renderProjectInput() {
   els.projectInput.value = bound ? currentProject : '';
 }
 
-// Notes are a frictionless inline list: each committed row is plain text
-// (single-click copies, double-click deletes); a persistent empty compose row
-// sits at the end. The list is disabled while the window is unbound.
+// Notes are a raw notepad: each committed row is plain text with copy/clear
+// buttons revealed on hover; a persistent empty compose row sits at the end. The
+// list is disabled while the window is unbound.
 function renderNotes() {
   const bound = currentProject !== null;
   const items = bound ? projects.getProject(state, currentProject).notes || [] : [];
@@ -677,26 +682,33 @@ function renderNotes() {
   items.forEach((text, i) => {
     const item = document.createElement('li');
     item.className = 'note-item';
-    item.textContent = text;
-    item.title = 'Click to copy, double-click to delete';
 
-    // Disambiguate single (copy) from double (delete) with a short timer.
-    let clickTimer = null;
-    item.addEventListener('click', () => {
-      if (clickTimer) return; // second click handled by dblclick
-      clickTimer = setTimeout(() => {
-        clickTimer = null;
-        copyText(text, item);
-      }, CLICK_DELAY);
-    });
-    item.addEventListener('dblclick', () => {
-      if (clickTimer) {
-        clearTimeout(clickTimer);
-        clickTimer = null;
-      }
-      deleteNote(i);
-    });
+    const textEl = document.createElement('span');
+    textEl.className = 'note-text';
+    textEl.textContent = text;
 
+    // Per-line copy / clear buttons, revealed on hover.
+    const actions = document.createElement('span');
+    actions.className = 'note-actions';
+
+    const copyBtn = document.createElement('button');
+    copyBtn.type = 'button';
+    copyBtn.className = 'note-line-btn';
+    copyBtn.title = 'Copy';
+    copyBtn.setAttribute('aria-label', 'Copy');
+    copyBtn.innerHTML = ICON_COPY;
+    copyBtn.addEventListener('click', () => copyText(text, copyBtn));
+
+    const clearBtn = document.createElement('button');
+    clearBtn.type = 'button';
+    clearBtn.className = 'note-line-btn';
+    clearBtn.title = 'Clear';
+    clearBtn.setAttribute('aria-label', 'Clear');
+    clearBtn.innerHTML = ICON_CLEAR;
+    clearBtn.addEventListener('click', () => deleteNote(i));
+
+    actions.append(copyBtn, clearBtn);
+    item.append(textEl, actions);
     els.noteList.insertBefore(item, els.noteComposeItem);
   });
 }
