@@ -356,6 +356,12 @@ body {
   color: var(--ok);
 }
 
+/* Completed task: strikethrough in place (the only done indicator) */
+.planner-item.done {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
 .tile-list.bulleted .planner-item {
   padding: 4px 0 4px 1.2em;
   text-indent: -1.2em;

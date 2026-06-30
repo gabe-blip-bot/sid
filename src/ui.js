@@ -487,19 +487,27 @@ function renderPlanner() {
 
 function renderTileColumn(listEl, items, key) {
   listEl.innerHTML = '';
+  const isTasks = key === 'tasks';
   items.forEach((item, i) => {
     const li = document.createElement('li');
     li.className = 'planner-item';
     li.textContent = item.text;
-    li.title = 'Click to copy, double-click to delete';
 
-    // Disambiguate single (copy) from double (delete) with a short timer.
+    // Tasks: single-click toggles done (strikethrough, in place); the line
+    // stays put as a record. Schedule: single-click copies. Both: double deletes.
+    if (isTasks && item.done) li.classList.add('done');
+    li.title = isTasks
+      ? 'Click to complete, double-click to delete'
+      : 'Click to copy, double-click to delete';
+
+    // Disambiguate single from double with a short timer.
     let clickTimer = null;
     li.addEventListener('click', () => {
       if (clickTimer) return; // second click handled by dblclick
       clickTimer = setTimeout(() => {
         clickTimer = null;
-        copyText(item.text, li);
+        if (isTasks) toggleTask(i);
+        else copyText(item.text, li);
       }, CLICK_DELAY);
     });
     li.addEventListener('dblclick', () => {
@@ -514,7 +522,14 @@ function renderTileColumn(listEl, items, key) {
   });
 }
 
-// Double-click a line to delete it (a finished task is just removed).
+// Single-click a task to toggle its done/strikethrough state, leaving it in place.
+function toggleTask(index) {
+  projects.toggleListItem(state, 'tasks', index);
+  scheduleSave();
+  renderPlanner();
+}
+
+// Double-click a line to delete it (mistakes/clearing).
 function deleteTile(key, index) {
   projects.removeFromList(state, key, index);
   scheduleSave();
