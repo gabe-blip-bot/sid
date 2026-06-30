@@ -37,11 +37,10 @@ It is not a task manager, not a notes app, and not an AI assistant.
 - **Planner** — two global columns: a plain-text **schedule** (left, no bullets)
   and a numbered **task** list (right). Above the schedule sits today's **day and
   date**; above the tasks sits a **theme** line (a short global label, autosaved).
-  Type on a column's bottom line and press Enter to add an entry. **Schedule**
-  lines: single-click copies, double-click deletes, and **Backspace** at the start
-  of the add-line pulls the previous item back to edit it. **Tasks** keep a done
-  state — single-click toggles **strikethrough** (the task stays in place as a
-  record of done vs. left), double-click deletes.
+  Type on a column's bottom line and press Enter to add an entry. On both lists,
+  **single-click a line to edit** it in place (Enter commits, Esc cancels, empty
+  removes it) and **double-click to delete** it. **Schedule** lines can be
+  **dragged to reorder**.
 - A link at the **top-right of the global section** opens the full-page
   ([new tab](#new-tab-page-preview)) view of these global surfaces.
 - **Distractions** — one global quick-capture box at the bottom of the panel.
