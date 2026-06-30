@@ -380,10 +380,16 @@ export function captureWorkspace(project, tabs, now) {
     }
   }
 
+  // Cap the archive (most recently removed first) so auto-capture can't grow it
+  // without bound.
+  const removedTabs = [...archive.values()]
+    .sort((a, b) => (b.removedAt || 0) - (a.removedAt || 0))
+    .slice(0, 25);
+
   return {
     ...project,
     workspace: { savedAt: now, tabs: newTabs },
-    removedTabs: [...archive.values()]
+    removedTabs
   };
 }
 

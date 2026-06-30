@@ -23,7 +23,6 @@ const els = {
   newtabLink: document.getElementById('newtabLink'),
   copyAllButton: document.getElementById('copyAllButton'),
   completeAllButton: document.getElementById('completeAllButton'),
-  saveProjectButton: document.getElementById('saveProjectButton'),
   renameButton: document.getElementById('renameButton'),
   archiveButton: document.getElementById('archiveButton'),
   noteList: document.getElementById('noteList'),
@@ -48,6 +47,7 @@ let state = projects.emptyState();
 let windowId = null;
 let currentProject = null;
 let saveTimer = null;
+let workspaceTimer = null; // debounce for auto-capturing the tab snapshot
 
 let distractionsOpen = false; // whether the distractions review list is expanded
 let themeEditing = false; // true once the theme field has snapshotted this focus
@@ -124,7 +124,6 @@ function bindEvents() {
   els.newtabLink.addEventListener('click', () => {
     chrome.tabs.create({ url: chrome.runtime.getURL('newtab.html') });
   });
-  els.saveProjectButton.addEventListener('click', saveProject);
   els.renameButton.addEventListener('click', enterRename);
   els.renameInput.addEventListener('keydown', onRenameKey);
   els.renameInput.addEventListener('blur', exitRename);
@@ -192,23 +191,23 @@ function bindEvents() {
   bindTabWatch();
 }
 
-// Refresh the save-status dot when this window's tabs change.
+// Auto-capture this window's tab snapshot whenever its tabs change.
 function bindTabWatch() {
   const here = (winId) => String(winId) === windowId;
   chrome.tabs.onCreated.addListener((tab) => {
-    if (here(tab.windowId)) renderSaveStatus();
+    if (here(tab.windowId)) scheduleWorkspaceCapture();
   });
   chrome.tabs.onRemoved.addListener((id, info) => {
-    if (here(info.windowId)) renderSaveStatus();
+    if (here(info.windowId)) scheduleWorkspaceCapture();
   });
   chrome.tabs.onUpdated.addListener((id, change, tab) => {
-    if (change.url && here(tab.windowId)) renderSaveStatus();
+    if (change.url && here(tab.windowId)) scheduleWorkspaceCapture();
   });
   chrome.tabs.onAttached.addListener((id, info) => {
-    if (here(info.newWindowId)) renderSaveStatus();
+    if (here(info.newWindowId)) scheduleWorkspaceCapture();
   });
   chrome.tabs.onDetached.addListener((id, info) => {
-    if (here(info.oldWindowId)) renderSaveStatus();
+    if (here(info.oldWindowId)) scheduleWorkspaceCapture();
   });
 }
 
@@ -432,7 +431,6 @@ function commitCompose() {
   autoGrow(els.noteComposeRow);
   scheduleSave();
   renderNotes(); // rebuilds committed rows only; the compose row keeps focus
-  renderSaveStatus();
 }
 
 // Double-click a note to delete it.
@@ -441,7 +439,6 @@ function deleteNote(index) {
   projects.removeNote(state, currentProject, index);
   scheduleSave();
   renderNotes();
-  renderSaveStatus();
 }
 
 // Backspace at the start of the compose line merges the previous bullet back in
@@ -461,7 +458,6 @@ function pullBackNote(event) {
   autoGrow(els.noteComposeRow);
   els.noteComposeRow.focus();
   els.noteComposeRow.setSelectionRange(prev.length, prev.length);
-  renderSaveStatus();
 }
 
 // Copy every note (one per line) without removing them.
@@ -481,7 +477,6 @@ function clearAllNotes() {
   projects.clearNotes(state, currentProject);
   scheduleSave();
   renderNotes();
-  renderSaveStatus();
 }
 
 // True when the caret sits at the very start of a field, with no selection.
@@ -512,21 +507,24 @@ function flash(button) {
 
 // --- Workspace -------------------------------------------------------------
 
-// Capture this window's reopenable tabs as the project's workspace snapshot,
-// plus the notes and name at save time (so the status dot tracks all three). The
-// saving window becomes the project's host window.
-async function saveProject() {
+// Auto-capture the window's reopenable tabs as the project's workspace snapshot,
+// debounced so a burst of tab changes coalesces into one write.
+function scheduleWorkspaceCapture() {
+  clearTimeout(workspaceTimer);
+  workspaceTimer = setTimeout(captureWorkspaceNow, SAVE_DELAY);
+}
+
+async function captureWorkspaceNow() {
   if (!currentProject) return;
   const tabs = await chrome.tabs.query({ currentWindow: true });
   const reopenable = tabs.filter((t) => projects.isReopenable(t.url));
-  const updated = projects.captureWorkspace(activeProject(), reopenable, Date.now());
-  updated.workspace.notes = (updated.notes || []).slice();
-  updated.workspace.name = currentProject;
-
-  state.projects[currentProject] = updated;
+  state.projects[currentProject] = projects.captureWorkspace(
+    activeProject(),
+    reopenable,
+    Date.now()
+  );
   projects.setWorkspaceWindow(state, currentProject, windowId);
   await storage.save(state);
-  renderSaveStatus();
   renderRemoved();
 }
 
@@ -549,7 +547,6 @@ function renderAll() {
   renderDayHeader();
   renderPlanner();
   renderDistractions();
-  renderSaveStatus();
   renderRemoved();
 }
 
@@ -738,7 +735,6 @@ function renderDayHeader() {
 
 function renderProjectInput() {
   const bound = currentProject !== null;
-  els.saveProjectButton.disabled = !bound;
   els.renameButton.disabled = !bound;
   els.archiveButton.disabled = !bound;
   els.projectInput.placeholder = bound ? 'Project' : 'Pick or create a project';
@@ -802,54 +798,6 @@ function renderNotes() {
 function autoGrow(el) {
   el.style.height = 'auto';
   el.style.height = `${el.scrollHeight}px`;
-}
-
-// The save icon shows the last-saved time on hover and a single red dot when the
-// project has unsaved changes — to its tabs, name, or notes since the last save.
-// There is no "saved" (green) dot; a clean project shows nothing.
-async function renderSaveStatus() {
-  const bound = currentProject !== null;
-  const project = bound ? projects.getProject(state, currentProject) : null;
-  const workspace = project ? project.workspace : null;
-  els.saveProjectButton.title = !bound
-    ? 'Save project'
-    : workspace
-    ? `Save project — last saved ${new Date(workspace.savedAt).toLocaleString()}`
-    : 'Save project — not saved yet';
-
-  els.saveProjectButton.classList.remove('is-clean'); // green dot retired
-  if (!bound) {
-    els.saveProjectButton.classList.remove('is-dirty');
-    return;
-  }
-  els.saveProjectButton.classList.toggle('is-dirty', await isProjectDirty(project));
-}
-
-// The window's reopenable tab URLs right now.
-async function currentReopenableUrls() {
-  const tabs = await chrome.tabs.query({ currentWindow: true });
-  return tabs.filter((t) => projects.isReopenable(t.url)).map((t) => t.url);
-}
-
-// True when the project differs from its last save: tabs drifted, the name
-// changed, or the notes changed. A never-saved project is dirty once it has
-// anything worth saving (tabs or notes).
-async function isProjectDirty(project) {
-  const ws = project.workspace;
-  const notes = project.notes || [];
-  const liveTabs = await currentReopenableUrls();
-
-  if (!ws) return liveTabs.length > 0 || notes.length > 0;
-  if (ws.name !== currentProject) return true;
-
-  const savedNotes = ws.notes || [];
-  if (savedNotes.length !== notes.length || savedNotes.some((n, i) => n !== notes[i])) {
-    return true;
-  }
-
-  const saved = (ws.tabs || []).map((t) => t.url).sort();
-  const live = liveTabs.slice().sort();
-  return live.length !== saved.length || live.some((url, i) => url !== saved[i]);
 }
 
 function renderRemoved() {

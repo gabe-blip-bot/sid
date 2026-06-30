@@ -21,9 +21,9 @@ It is not a task manager, not a notes app, and not an AI assistant.
   light dividing line.
 - The header is a single project combobox: click to see all projects, type to
   filter, and Enter on a new name creates it. Typing a name that already exists
-  switches to it (never merges). Header icons: **undo** (revert the last content
-  change in either panel), **copy-all** / **clear-all** notes, **save** (capture
-  this window's tabs), **pencil** (rename in place), and **archive**.
+  switches to it (never merges). Header icons: **pencil** (rename in place) and
+  **archive** on the left; **undo** (revert the last content change) and
+  **copy-all** / **clear-all** notes on the right.
   The whole panel is styled like a plain written document — no tiles, boxes, or
   list buttons; you type straight onto lines.
 - **Notes** — a raw notepad that behaves like a small text editor. The bottom line
@@ -50,15 +50,14 @@ It is not a task manager, not a notes app, and not an AI assistant.
   collapse. Each row is plain text: **single-click** copies it, **double-click**
   deletes it. The chevron hides when the list is empty, and distractions are
   shared across every window.
-- **Save** (header icon) captures the current window's reopenable tabs
-  (title + URL, in order), plus the notes and project name, with a timestamp as
-  the project's snapshot. Its status dot shows a single **red** dot when there are
-  unsaved changes since that snapshot — to the tabs, the project name, or the
-  notes — and nothing when everything's saved; hover the icon for the last-saved
-  time.
-- **Removed Tabs** — when a save no longer contains a previously saved tab, it is
-  archived here (by URL, deduped). **Restore** reopens it and clears it from the
-  list. A tab that reappears in a later save leaves the archive automatically.
+- **Everything autosaves.** Notes, schedule, tasks, distractions, theme, and the
+  project name persist as you type, and the window's reopenable tabs (title + URL,
+  in order) are **snapshotted automatically** whenever the tabs change — there's no
+  save button.
+- **Removed Tabs** — when the auto-snapshot no longer contains a previously seen
+  tab (you closed it or navigated away), it's archived here (by URL, deduped, most
+  recent 25). **Restore** reopens it and clears it from the list; a tab that
+  reappears leaves the archive automatically.
 - **Archiving** a project hides it from the switcher and moves its window(s) to
   another active project; its notes and saved tabs are kept. (Restoring and
   deleting archived projects will live on a separate surface, not the side
