@@ -33,7 +33,10 @@ const els = {
   removedSection: document.getElementById('removedSection'),
   removedSummary: document.getElementById('removedSummary'),
   removedList: document.getElementById('removedList'),
-  distractionInput: document.getElementById('distractionInput')
+  distractionInput: document.getElementById('distractionInput'),
+  distractionSection: document.getElementById('distractionSection'),
+  distractionSummary: document.getElementById('distractionSummary'),
+  distractionList: document.getElementById('distractionList')
 };
 
 let state = projects.emptyState();
@@ -138,7 +141,8 @@ function bindEvents() {
     scheduleSave();
   });
 
-  // Distractions: capture and clear; the box stays collapsed (no list shown).
+  // Distractions: capture-and-hide. Enter adds and clears; the list stays
+  // collapsed, but the summary count bumps to confirm the capture landed.
   els.distractionInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -146,6 +150,7 @@ function bindEvents() {
         projects.addDistraction(state, els.distractionInput.value);
         els.distractionInput.value = '';
         scheduleSave();
+        renderDistractions();
       }
     }
   });
@@ -479,6 +484,7 @@ function renderAll() {
   renderNotes();
   renderDayCycle();
   renderPlanner();
+  renderDistractions();
   renderSaveStatus();
   renderRemoved();
 }
@@ -730,6 +736,49 @@ function renderRemoved() {
     item.append(meta, restore);
     els.removedList.appendChild(item);
   }
+}
+
+// --- Distractions (global capture-and-hide list) ---------------------------
+
+// A collapsible review list (like Removed Tabs): hidden when empty, default
+// collapsed, each row plain text. Single-click copies, double-click deletes.
+function renderDistractions() {
+  const items = state.distractions || [];
+  els.distractionSection.hidden = items.length === 0;
+  els.distractionSummary.textContent = `Distractions (${items.length})`;
+
+  els.distractionList.innerHTML = '';
+  items.forEach((text, i) => {
+    const li = document.createElement('li');
+    li.className = 'note-item';
+    li.textContent = text;
+    li.title = 'Click to copy, double-click to delete';
+
+    // Disambiguate single (copy) from double (delete) with a short timer.
+    let clickTimer = null;
+    li.addEventListener('click', () => {
+      if (clickTimer) return; // second click handled by dblclick
+      clickTimer = setTimeout(() => {
+        clickTimer = null;
+        copyText(text, li);
+      }, CLICK_DELAY);
+    });
+    li.addEventListener('dblclick', () => {
+      if (clickTimer) {
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      deleteDistraction(i);
+    });
+
+    els.distractionList.appendChild(li);
+  });
+}
+
+function deleteDistraction(index) {
+  projects.removeDistraction(state, index);
+  scheduleSave();
+  renderDistractions();
 }
 
 // --- Persistence -----------------------------------------------------------
