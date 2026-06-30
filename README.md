@@ -24,23 +24,20 @@ It is not a task manager, not a notes app, and not an AI assistant.
   switches to it (never merges). Header icons act on the current project:
   **save** (capture this window's tabs), **pencil** (rename in place), and
   **archive**.
-- **Notes** — a frictionless inline list of short window notes for the project.
-  An always-present empty row at the end is where you type: **Enter** commits the
-  line as a note (**Shift+Enter** inserts a newline) and the row clears, ready for
-  the next. Committed notes are plain text — **single-click** a note to copy it
-  (with a brief confirmation), **double-click** to delete it. Below the list,
-  **copy-all** and **complete-all** icons copy every note (one per line) or clear
-  the list.
-- **Planner** — two global columns: a free-form **schedule** (left) and an
-  auto-numbered **task** list (right). Above the schedule sits today's **day and
-  date**; above the tasks sits a **theme** box (a short label for the day, global
-  and autosaved). Type in a column's input and press Enter to add a tile; the next
-  empty input is ready immediately (no number shown until a
-  task actually exists, so only created tasks are numbered 1..N). Each task shows
-  its **number** on the left; click it to complete the task — the number turns
-  into a **tick** and the text strikes through (click again to undo). Click a
-  tile's text to edit it in place, or **drag a tile to reorder** it within its
-  column. Schedule tiles are plain (no number, no strike).
+  The whole panel is styled like a plain written document — no tiles, boxes, or
+  list buttons; you type straight onto lines.
+- **Notes** — an open, bulleted scratchpad for the project. The bottom line is
+  always an empty bullet you write on: **Enter** commits it as a bulleted note
+  (**Shift+Enter** inserts a newline) and the line clears, ready for the next.
+  Committed notes are plain bulleted text — **single-click** a note to copy it
+  (brief confirmation), **double-click** to delete it.
+- **Planner** — two global columns of plain text: a **schedule** (left, bulleted)
+  and a **task** list (right, numbered). Above the schedule sits today's **day and
+  date**; above the tasks sits a **theme** line (a short global label, autosaved).
+  Type on a column's bottom line and press Enter to add an entry. Each line
+  **single-click** copies, **double-click** deletes — a finished task is just
+  deleted. Numbers and bullets are ordering only, not controls. To change a line,
+  delete it and retype.
 - **Distractions** — one global quick-capture box at the bottom of the panel.
   Click it, type a distraction, and press Enter; it's saved and the box clears
   (nothing expands). Once you've captured something, a **count + chevron** appears
