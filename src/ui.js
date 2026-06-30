@@ -283,12 +283,6 @@ function renderList() {
       li.setAttribute('role', 'option');
       if (row.kind === 'project') {
         li.textContent = row.name;
-        if (row.name === currentProject) {
-          const badge = document.createElement('span');
-          badge.className = 'badge';
-          badge.textContent = 'current';
-          li.appendChild(badge);
-        }
       } else if (row.kind === 'create') {
         li.classList.add('combo-action');
         li.textContent = `Create "${row.name}"`;
