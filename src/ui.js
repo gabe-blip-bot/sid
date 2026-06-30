@@ -17,7 +17,7 @@ const els = {
   saveProjectButton: document.getElementById('saveProjectButton'),
   renameButton: document.getElementById('renameButton'),
   archiveButton: document.getElementById('archiveButton'),
-  noteAddButton: document.getElementById('noteAddButton'),
+  noteComposer: document.getElementById('noteComposer'),
   copyAllButton: document.getElementById('copyAllButton'),
   completeAllButton: document.getElementById('completeAllButton'),
   noteList: document.getElementById('noteList'),
@@ -27,8 +27,6 @@ const els = {
   removedSummary: document.getElementById('removedSummary'),
   removedList: document.getElementById('removedList'),
   distractionInput: document.getElementById('distractionInput'),
-  distractionsSection: document.getElementById('distractionsSection'),
-  distractionsSummary: document.getElementById('distractionsSummary'),
   distractionList: document.getElementById('distractionList')
 };
 
@@ -112,7 +110,20 @@ function bindEvents() {
   els.renameInput.addEventListener('blur', exitRename);
   els.archiveButton.addEventListener('click', archiveCurrent);
 
-  els.noteAddButton.addEventListener('click', startNewNote);
+  // Note taker: type freely (wrapping); Enter commits the line as a task.
+  els.noteComposer.addEventListener('input', () => autoGrow(els.noteComposer));
+  els.noteComposer.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (els.noteComposer.value.trim() && currentProject) {
+        projects.addNote(state, currentProject, els.noteComposer.value);
+        els.noteComposer.value = '';
+        autoGrow(els.noteComposer);
+        scheduleSave();
+        renderNotes();
+      }
+    }
+  });
   els.copyAllButton.addEventListener('click', copyAllNotes);
   els.completeAllButton.addEventListener('click', completeAllNotes);
 
@@ -380,27 +391,13 @@ async function archiveCurrent() {
 
 // --- Notes (per-project item list) -----------------------------------------
 
-// The header "add note" icon creates a new empty note and edits it in place.
-function startNewNote() {
-  if (!currentProject) return;
-  const project = projects.ensureProject(state, currentProject);
-  if (!Array.isArray(project.notes)) project.notes = [];
-  project.notes.push('');
-  editingNote = project.notes.length - 1;
-  renderNotes();
-  const input = document.getElementById('noteEditInput');
-  if (input) {
-    input.focus();
-    input.scrollIntoView({ block: 'nearest' });
-  }
-}
-
-// Click a note to edit it in place.
+// Click a note to edit it in place (in a wrapping textarea).
 function startEdit(index) {
   editingNote = index;
   renderNotes();
   const input = document.getElementById('noteEditInput');
   if (input) {
+    autoGrow(input);
     input.focus();
     input.select();
   }
@@ -415,14 +412,7 @@ function commitEdit(index, value) {
 }
 
 function cancelEdit() {
-  const index = editingNote;
   editingNote = -1;
-  // Discard a brand-new note that was never filled in.
-  const items = projects.getProject(state, currentProject).notes || [];
-  if (items[index] === '') {
-    projects.removeNote(state, currentProject, index);
-    scheduleSave();
-  }
   renderNotes();
 }
 
@@ -516,12 +506,9 @@ function renderDayCycle() {
   }
 }
 
-// Distractions: a collapsible global list with a quick-capture line above it.
+// Distractions: a global write box with the captured items listed below it.
 function renderDistractions() {
   const items = state.distractions || [];
-  els.distractionsSection.hidden = items.length === 0;
-  els.distractionsSummary.textContent = `Distractions (${items.length})`;
-
   els.distractionList.innerHTML = '';
   items.forEach((text, i) => {
     const item = document.createElement('li');
@@ -565,7 +552,7 @@ function renderNotes() {
   const items = bound ? projects.getProject(state, currentProject).notes || [] : [];
 
   if (!bound) editingNote = -1;
-  els.noteAddButton.disabled = !bound;
+  els.noteComposer.disabled = !bound;
   els.copyAllButton.disabled = !items.length;
   els.completeAllButton.disabled = !items.length;
 
@@ -575,13 +562,14 @@ function renderNotes() {
     item.className = 'note-item';
 
     if (i === editingNote) {
-      const input = document.createElement('input');
+      const input = document.createElement('textarea');
       input.id = 'noteEditInput';
-      input.className = 'line-input note-edit-input';
-      input.type = 'text';
+      input.className = 'note-composer note-edit-input';
+      input.rows = 1;
       input.value = text;
+      input.addEventListener('input', () => autoGrow(input));
       input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
+        if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
           commitEdit(i, input.value);
         } else if (e.key === 'Escape') {
@@ -628,9 +616,16 @@ function icon(...paths) {
   return `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 }
 
-// The save icon shows last-saved time on hover and a status dot: green when the
-// saved snapshot matches the window's current tabs, red when there are unsaved
-// changes (tabs differ, or never saved).
+// Resize a textarea to fit its content (so writing wraps across lines).
+function autoGrow(el) {
+  el.style.height = 'auto';
+  el.style.height = `${el.scrollHeight}px`;
+}
+
+// The save icon shows last-saved time on hover and a status dot. It only tracks
+// the saved TABS snapshot — not notes/ideas (those autosave separately): green
+// when the snapshot matches the window's tabs, red when tabs have drifted, and
+// no dot until a snapshot exists.
 async function renderSaveStatus() {
   const bound = currentProject !== null;
   const workspace = bound ? projects.getProject(state, currentProject).workspace : null;
@@ -640,7 +635,7 @@ async function renderSaveStatus() {
     ? `Save project tabs — last saved ${new Date(workspace.savedAt).toLocaleString()}`
     : 'Save project tabs — not saved yet';
 
-  if (!bound) {
+  if (!bound || !workspace) {
     els.saveProjectButton.classList.remove('is-clean', 'is-dirty');
     return;
   }

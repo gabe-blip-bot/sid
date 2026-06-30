@@ -88,18 +88,23 @@ body {
   border-color: var(--border);
 }
 
-/* Borderless line input — just a line with a cursor */
-.line-input {
+/* Note taker: a borderless, wrapping, auto-growing text area */
+.note-composer {
   width: 100%;
-  padding: 2px 2px;
+  min-height: 26px;
+  padding: 4px 2px;
   border: none;
   background: transparent;
   color: var(--text);
   font: inherit;
+  line-height: 1.5;
   outline: none;
+  resize: none;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
 
-.line-input::placeholder {
+.note-composer::placeholder {
   color: var(--muted);
 }
 
@@ -227,10 +232,10 @@ body {
 
 .note-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 2px;
-  padding: 2px 0;
-  line-height: 1.4;
+  padding: 1px 0;
+  line-height: 1.5;
 }
 
 .note-item + .note-item {
@@ -240,7 +245,7 @@ body {
 .note-text {
   flex: 1;
   min-width: 0;
-  padding: 2px 4px 2px 2px;
+  padding: 4px 4px 4px 2px;
   overflow-wrap: anywhere;
   cursor: text;
 }
@@ -384,7 +389,7 @@ body {
 .removed-list {
   list-style: none;
   margin: 6px 0 0;
-  padding: 0;
+  padding: 0 0 0 18px;
 }
 
 .removed-item {
@@ -423,39 +428,17 @@ body {
   padding: 6px 12px;
 }
 
-/* Distractions: quick-capture line + collapsible list */
+/* Distractions: a write box with the captured items indented below it */
 .distractions {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.distractions-box > summary {
-  cursor: pointer;
-  color: var(--muted);
-  font-size: 12px;
-  list-style: none;
-  padding: 6px 10px;
-  border-radius: 8px;
-  background: var(--button);
-}
-
-.distractions-box > summary::-webkit-details-marker {
-  display: none;
-}
-
-.distractions-box > summary::marker {
-  content: '';
-}
-
-.distractions-box > summary:hover {
-  background: var(--button-hover);
-}
-
 .distraction-list {
   list-style: none;
-  margin: 6px 0 0;
-  padding: 0;
+  margin: 4px 0 0;
+  padding: 0 0 0 18px;
 }
 
 .distraction-item {

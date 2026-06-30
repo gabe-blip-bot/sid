@@ -68,21 +68,6 @@
             </svg>
           </button>
           <button
-            id="noteAddButton"
-            class="icon-button"
-            type="button"
-            title="Add a window note"
-            aria-label="Add a window note"
-          >
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <path d="M14 2v6h6" />
-              <path d="M12 18v-6" />
-              <path d="M9 15h6" />
-            </svg>
-          </button>
-          <button
             id="archiveButton"
             class="icon-button"
             type="button"
@@ -100,6 +85,13 @@
       </header>
 
       <section class="notes">
+        <textarea
+          id="noteComposer"
+          class="note-composer"
+          rows="1"
+          placeholder="Take a note"
+          aria-label="Take a note"
+        ></textarea>
         <ul id="noteList" class="note-list"></ul>
         <div class="note-toolbar">
           <button id="copyAllButton" class="note-btn" type="button" title="Copy all" aria-label="Copy all">
@@ -126,16 +118,13 @@
       <section class="distractions">
         <input
           id="distractionInput"
-          class="line-input"
+          class="input distraction-box"
           type="text"
-          placeholder="Distractions"
+          placeholder="Distraction&hellip;"
           autocomplete="off"
           aria-label="Add a distraction"
         />
-        <details id="distractionsSection" class="distractions-box" hidden>
-          <summary id="distractionsSummary">Distractions</summary>
-          <ul id="distractionList" class="distraction-list"></ul>
-        </details>
+        <ul id="distractionList" class="distraction-list"></ul>
       </section>
     </main>
 
