@@ -50,6 +50,32 @@
             </svg>
           </button>
           <button
+            id="copyAllButton"
+            class="icon-button"
+            type="button"
+            title="Copy all notes"
+            aria-label="Copy all notes"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 9h11v11H9z" /><path d="M5 15H4V4h11v1" />
+            </svg>
+          </button>
+          <button
+            id="completeAllButton"
+            class="icon-button"
+            type="button"
+            title="Clear all notes"
+            aria-label="Clear all notes"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 6h18" />
+              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+            </svg>
+          </button>
+          <button
             id="saveProjectButton"
             class="icon-button"
             type="button"
@@ -105,21 +131,6 @@
             ></textarea>
           </li>
         </ul>
-        <div class="note-toolbar">
-          <button id="copyAllButton" class="note-btn" type="button" title="Copy all notes" aria-label="Copy all notes">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M9 9h11v11H9z" /><path d="M5 15H4V4h11v1" />
-            </svg>
-          </button>
-          <button id="completeAllButton" class="note-btn" type="button" title="Clear all notes" aria-label="Clear all notes">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M9 11l3 3L22 4" />
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-            </svg>
-          </button>
-        </div>
       </section>
 
       <details id="removedSection" class="removed" hidden>
@@ -129,17 +140,6 @@
       </div>
 
       <div class="chrome-panel">
-      <div class="chrome-head">
-        <button id="newtabLink" class="newtab-link" type="button"
-          title="Open full page" aria-label="Open full page">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
-            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M15 3h6v6" />
-            <path d="M10 14 21 3" />
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-          </svg>
-        </button>
-      </div>
       <section class="planner">
         <div class="planner-col">
           <div id="dayDate" class="col-head" aria-label="Today"></div>
@@ -154,8 +154,19 @@
           />
         </div>
         <div class="planner-col">
-          <input id="dayThemeInput" class="day-theme" type="text" placeholder="Theme"
-            autocomplete="off" aria-label="Day theme" />
+          <div class="theme-row">
+            <input id="dayThemeInput" class="day-theme" type="text" placeholder="Theme"
+              autocomplete="off" aria-label="Day theme" />
+            <button id="newtabLink" class="newtab-link" type="button"
+              title="Open full page" aria-label="Open full page">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M15 3h6v6" />
+                <path d="M10 14 21 3" />
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              </svg>
+            </button>
+          </div>
           <ul id="taskList" class="tile-list numbered"></ul>
           <input
             id="taskInput"
@@ -174,7 +185,7 @@
             id="distractionInput"
             class="distraction-box"
             type="text"
-            placeholder="Distractions"
+            placeholder="Distractions&hellip;"
             autocomplete="off"
             aria-label="Add a distraction"
           />

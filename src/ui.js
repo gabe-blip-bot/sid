@@ -582,8 +582,13 @@ function pullBackListItem(event, input, key) {
 // numbers are presentation-only (CSS); each line copies on single-click and
 // deletes on double-click — the same gesture notes use.
 function renderPlanner() {
-  renderTileColumn(els.scheduleList, state.schedule || [], 'schedule');
-  renderTileColumn(els.taskList, state.tasks || [], 'tasks');
+  const schedule = state.schedule || [];
+  const tasks = state.tasks || [];
+  // Only hint on an empty column; once there are entries the add-line is blank.
+  els.scheduleInput.placeholder = schedule.length ? '' : 'Schedule…';
+  els.taskInput.placeholder = tasks.length ? '' : 'Task…';
+  renderTileColumn(els.scheduleList, schedule, 'schedule');
+  renderTileColumn(els.taskList, tasks, 'tasks');
 }
 
 function renderTileColumn(listEl, items, key) {
@@ -671,7 +676,8 @@ function renderNotes() {
   const items = bound ? projects.getProject(state, currentProject).notes || [] : [];
 
   els.noteComposeRow.disabled = !bound;
-  els.noteComposeRow.placeholder = bound ? '' : 'Pick a project first';
+  // Hint "Notes…" only on a blank notepad; once you've written, the line is bare.
+  els.noteComposeRow.placeholder = !bound ? 'Pick a project first' : items.length ? '' : 'Notes…';
   els.copyAllButton.disabled = !items.length;
   els.completeAllButton.disabled = !items.length;
 
