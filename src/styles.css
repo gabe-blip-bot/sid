@@ -8,8 +8,8 @@
   --muted: #8a7c72; /* warm grey-brown for secondary text */
   --border: #e6ded6; /* warm hairline */
   --field: #ffffff;
-  --button: #f6f1ec; /* warm off-white */
-  --button-hover: #ece4db;
+  --button: #f1f2f3; /* neutral light grey for filled controls/tiles */
+  --button-hover: #e7e8ea;
   --focus: #6dbae5; /* icon blue */
   --accent: #6dbae5;
   --accent-text: #ffffff;
@@ -25,8 +25,8 @@
     --muted: #b3a397;
     --border: #56433a;
     --field: #2c1f19;
-    --button: #4a3830;
-    --button-hover: #564139;
+    --button: #413c39; /* neutral, less warm than the brown surface */
+    --button-hover: #4c4642;
     --focus: #6dbae5;
     --accent: #6dbae5;
     --accent-text: #1f1410;
