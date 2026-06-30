@@ -12,6 +12,9 @@ It is not a task manager, not a notes app, and not an AI assistant.
   badge tag for the focused window's project (initials or first letters), with the
   full name in the icon's tooltip. (Chrome doesn't let extensions label the tab
   bar itself, so the badge is the closest always-visible indicator.)
+- Chrome's side-panel header shows the window's current project — `<project> — Sid`
+  (project name first so it survives truncation), or plain `Sid` when the window is
+  unbound. It updates as you switch, rename, or archive the project.
 - The panel is two cards, flush to the panel edges on a plain background: the
   **per-project (window) card** on top (project bar, notes, removed tabs) and the
   **global (chrome) card** below (day theme, planner, distractions — shared across

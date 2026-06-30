@@ -486,6 +486,9 @@ async function restoreTab(url) {
 // --- Rendering -------------------------------------------------------------
 
 function renderAll() {
+  // Reflect the window's project in Chrome's side-panel header. Project name
+  // first so it survives truncation in the narrow header; plain 'Sid' when unbound.
+  document.title = currentProject ? `${currentProject} — Sid` : 'Sid';
   renderProjectInput();
   renderNotes();
   renderDayCycle();
