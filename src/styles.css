@@ -60,11 +60,14 @@ body {
   overflow-y: auto;
 }
 
-/* Chrome (global) and window (per-project) panels, separated by spacing only */
+/* Chrome (global) and window (per-project) panels. A light line marks the top
+   of the chrome section. */
 .chrome-panel {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
 }
 
 .window-panel {
@@ -320,7 +323,7 @@ body {
 /* Planner: two columns of plain text lists (schedule bulleted | tasks numbered) */
 .planner {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 2fr; /* schedule narrower, task/theme wider */
   gap: 12px;
   align-items: start;
 }
@@ -354,7 +357,7 @@ body {
 }
 
 .tile-list.bulleted .planner-item {
-  padding: 1px 0 1px 1.2em;
+  padding: 4px 0 4px 1.2em;
   text-indent: -1.2em;
 }
 
@@ -365,7 +368,7 @@ body {
 
 .tile-list.numbered .planner-item {
   counter-increment: task;
-  padding: 1px 0 1px 1.7em;
+  padding: 4px 0 4px 1.7em;
   text-indent: -1.7em;
 }
 
