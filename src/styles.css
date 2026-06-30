@@ -211,7 +211,12 @@ body {
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
-  right: 0;
+  right: auto;
+  /* Grow to fit the longest project name (so it isn't cropped), but stay within
+     the panel's padded width. */
+  width: max-content;
+  min-width: 100%;
+  max-width: calc(100vw - 36px);
   z-index: 10;
   margin: 0;
   padding: 4px;
