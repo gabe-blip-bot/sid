@@ -1,7 +1,7 @@
 :root {
   color-scheme: light dark;
   --bg: #ffffff;
-  --page: #e9eaed; /* Chrome's light UI grey behind the white cards */
+  --page: #ceead6; /* matches Chrome's green profile theme tint */
   --text: #1f1f1f;
   --muted: #5f6368;
   --border: #dadce0;
@@ -18,7 +18,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #1f1f1f;
-    --page: #202124; /* Chrome's dark UI grey behind the cards */
+    --page: #1f271f; /* dark green tint to match the green profile theme */
     --text: #e3e3e3;
     --muted: #9aa0a6;
     --border: #444746;
@@ -58,17 +58,13 @@ body {
   overflow-y: auto;
 }
 
-/* App header: the wordmark with the current window's project in bold beside it */
+/* App header: the current window's project shown in bold (the native side-panel
+   header already shows "Sidebar Sid", so we don't repeat it here) */
 .app-header {
   display: flex;
   align-items: baseline;
   gap: 8px;
   padding: 0 2px;
-}
-
-.app-name {
-  color: var(--muted);
-  font-size: 12px;
 }
 
 .window-label {
@@ -83,7 +79,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 8px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -95,7 +90,6 @@ body {
   gap: 12px;
   flex: 1;
   min-height: 0;
-  padding: 8px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 12px;
