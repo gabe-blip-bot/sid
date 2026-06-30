@@ -1,7 +1,7 @@
 :root {
   color-scheme: light dark;
   --bg: #ffffff;
-  --page: #f3f4f6; /* faint neutral behind the white cards */
+  --page: #e9eaed; /* Chrome's light UI grey behind the white cards */
   --text: #1f1f1f;
   --muted: #5f6368;
   --border: #dadce0;
@@ -18,7 +18,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #1f1f1f;
-    --page: #161616; /* darker than the cards so they read as modules */
+    --page: #202124; /* Chrome's dark UI grey behind the cards */
     --text: #e3e3e3;
     --muted: #9aa0a6;
     --border: #444746;
@@ -58,12 +58,32 @@ body {
   overflow-y: auto;
 }
 
+/* App header: the wordmark with the current window's project in bold beside it */
+.app-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0 2px;
+}
+
+.app-name {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.window-label {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Chrome (global, top) and window (per-project) panels as two white cards */
 .chrome-panel {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 13px;
+  padding: 8px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -75,7 +95,7 @@ body {
   gap: 12px;
   flex: 1;
   min-height: 0;
-  padding: 13px;
+  padding: 8px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 12px;
