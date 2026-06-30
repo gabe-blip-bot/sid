@@ -96,6 +96,7 @@ body {
 
 .project {
   font-weight: 700;
+  color: var(--accent); /* chosen project shown in the icon blue */
 }
 
 .input:hover {
