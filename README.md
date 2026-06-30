@@ -69,8 +69,14 @@ After editing files, click **Reload** on the Sid card.
 ## Keyboard shortcut
 
 Press **Ctrl+Shift+Y** (**Cmd+Shift+Y** on macOS) to toggle the side panel open
-and closed — the same as clicking the toolbar icon. Rebind or clear it at
-`chrome://extensions/shortcuts` if it clashes with another extension.
+and closed — the same as clicking the toolbar icon.
+
+While developing, **Ctrl+Shift+U** (**Cmd+Shift+U** on macOS) reloads the
+extension — it re-reads the files from disk, so you don't have to click **Reload**
+on the Sid card after editing.
+
+Rebind or clear either shortcut at `chrome://extensions/shortcuts` if it clashes
+with another extension.
 
 ## Layout
 
