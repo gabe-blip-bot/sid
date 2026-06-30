@@ -1,7 +1,6 @@
 :root {
   color-scheme: light dark;
   --bg: #ffffff;
-  --page: #ceead6; /* matches Chrome's green profile theme tint */
   --text: #1f1f1f;
   --muted: #5f6368;
   --border: #dadce0;
@@ -18,7 +17,6 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #1f1f1f;
-    --page: #1f271f; /* dark green tint to match the green profile theme */
     --text: #e3e3e3;
     --muted: #9aa0a6;
     --border: #444746;
@@ -44,7 +42,7 @@ body {
 }
 
 body {
-  background: var(--page);
+  background: var(--bg);
   color: var(--text);
   font: 13px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -54,27 +52,11 @@ body {
   flex-direction: column;
   height: 100%;
   gap: 12px;
-  padding: 8px;
+  padding: 0;
   overflow-y: auto;
 }
 
-/* App header: the current window's project shown in bold (the native side-panel
-   header already shows "Sidebar Sid", so we don't repeat it here) */
-.app-header {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 0 2px;
-}
-
-.window-label {
-  font-weight: 700;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Chrome (global, top) and window (per-project) panels as two white cards */
+/* Chrome (global) and window (per-project) panels as two cards */
 .chrome-panel {
   display: flex;
   flex-direction: column;
@@ -445,9 +427,11 @@ body {
   line-height: 1.4;
 }
 
-.planner-num {
-  flex: none;
-  color: var(--muted);
+/* Task number shown in the tick slot (until completed, when it becomes a tick) */
+.note-btn.tile-num {
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .planner-text {
