@@ -11,7 +11,6 @@ const CLICK_DELAY = 220; // ms to wait for a second click before copying
 const DAYS = ['mon', 'tue', 'wed', 'thu']; // working days in the week strip
 
 const els = {
-  windowLabel: document.getElementById('windowLabel'),
   comboWrap: document.getElementById('comboWrap'),
   projectInput: document.getElementById('projectInput'),
   projectListbox: document.getElementById('projectListbox'),
@@ -486,7 +485,6 @@ async function restoreTab(url) {
 // --- Rendering -------------------------------------------------------------
 
 function renderAll() {
-  renderWindowLabel();
   renderProjectInput();
   renderNotes();
   renderDayCycle();
@@ -521,21 +519,21 @@ function renderTileColumn(listEl, items, key, numbered, completable) {
     li.className = `planner-item${completable && item.done ? ' done' : ''}`;
 
     if (completable) {
-      const tick = document.createElement('button');
-      tick.type = 'button';
-      tick.className = 'note-btn tick';
-      tick.title = item.done ? 'Mark not done' : 'Complete';
-      tick.setAttribute('aria-label', tick.title);
-      tick.innerHTML = icon('M20 6 9 17l-5-5');
-      tick.addEventListener('click', () => toggleTile(key, i));
-      li.appendChild(tick);
-    }
-
-    if (numbered) {
-      const num = document.createElement('span');
-      num.className = 'planner-num';
-      num.textContent = `${i + 1}.`;
-      li.appendChild(num);
+      // One control in the left slot: shows the task number, and turns into a
+      // tick once completed. Clicking it toggles done.
+      const control = document.createElement('button');
+      control.type = 'button';
+      control.className = 'note-btn tick';
+      control.title = item.done ? 'Mark not done' : 'Complete';
+      control.setAttribute('aria-label', control.title);
+      if (!item.done && numbered) {
+        control.classList.add('tile-num');
+        control.textContent = `${i + 1}.`;
+      } else {
+        control.innerHTML = icon('M20 6 9 17l-5-5');
+      }
+      control.addEventListener('click', () => toggleTile(key, i));
+      li.appendChild(control);
     }
 
     if (editingTile && editingTile.key === key && editingTile.index === i) {
@@ -608,13 +606,6 @@ function renderDayCycle() {
   if (document.activeElement !== els.dayThemeInput) {
     els.dayThemeInput.value = (state.dayThemes && state.dayThemes[cycleDay]) || '';
   }
-}
-
-// Show which window this is: the current project as a bold label beside the
-// app name, and in the native side-panel header (the document title).
-function renderWindowLabel() {
-  els.windowLabel.textContent = currentProject || 'No project';
-  document.title = currentProject ? `Sidebar Sid — ${currentProject}` : 'Sidebar Sid';
 }
 
 function renderProjectInput() {

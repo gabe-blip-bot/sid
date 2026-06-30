@@ -8,73 +8,6 @@
   </head>
   <body>
     <main class="app">
-      <header class="app-header">
-        <span id="windowLabel" class="window-label"></span>
-      </header>
-
-      <div class="chrome-panel">
-      <section class="week-strip" aria-label="Day theme">
-        <button id="dayCycleButton" class="day-cycle" type="button" aria-label="Cycle day">Mon</button>
-        <input id="dayThemeInput" class="day-theme" type="text" placeholder="Theme"
-          autocomplete="off" aria-label="Day theme" />
-      </section>
-
-      <section class="planner">
-        <div class="planner-col">
-          <ul id="scheduleList" class="tile-list"></ul>
-          <input
-            id="scheduleInput"
-            class="tile-input"
-            type="text"
-            placeholder="Schedule&hellip;"
-            autocomplete="off"
-            aria-label="Add to schedule"
-          />
-        </div>
-        <div class="planner-col">
-          <ul id="taskList" class="tile-list"></ul>
-          <input
-            id="taskInput"
-            class="tile-input"
-            type="text"
-            placeholder="Task&hellip;"
-            autocomplete="off"
-            aria-label="Add a task"
-          />
-        </div>
-      </section>
-
-      <section class="distractions">
-        <div class="distraction-bar">
-          <input
-            id="distractionInput"
-            class="distraction-box"
-            type="text"
-            placeholder="Distraction&hellip;"
-            autocomplete="off"
-            aria-label="Add a distraction"
-          />
-          <button
-            id="distractionToggle"
-            class="distraction-toggle"
-            type="button"
-            title="Show distractions"
-            aria-label="Show distractions"
-            aria-expanded="false"
-            hidden
-          >
-            <span id="distractionCount" class="distraction-count">0</span>
-            <svg class="chev" viewBox="0 0 24 24" width="14" height="14" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round"
-              stroke-linejoin="round" aria-hidden="true">
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </button>
-        </div>
-        <ul id="distractionList" class="distraction-list" hidden></ul>
-      </section>
-      </div>
-
       <div class="window-panel">
       <header class="topbar">
         <div class="project-bar">
@@ -179,6 +112,69 @@
         <summary id="removedSummary">Removed Tabs</summary>
         <ul id="removedList" class="removed-list"></ul>
       </details>
+      </div>
+
+      <div class="chrome-panel">
+      <section class="week-strip" aria-label="Day theme">
+        <button id="dayCycleButton" class="day-cycle" type="button" aria-label="Cycle day">Mon</button>
+        <input id="dayThemeInput" class="day-theme" type="text" placeholder="Theme"
+          autocomplete="off" aria-label="Day theme" />
+      </section>
+
+      <section class="planner">
+        <div class="planner-col">
+          <ul id="scheduleList" class="tile-list"></ul>
+          <input
+            id="scheduleInput"
+            class="tile-input"
+            type="text"
+            placeholder="Schedule&hellip;"
+            autocomplete="off"
+            aria-label="Add to schedule"
+          />
+        </div>
+        <div class="planner-col">
+          <ul id="taskList" class="tile-list"></ul>
+          <input
+            id="taskInput"
+            class="tile-input"
+            type="text"
+            placeholder="Task&hellip;"
+            autocomplete="off"
+            aria-label="Add a task"
+          />
+        </div>
+      </section>
+
+      <section class="distractions">
+        <div class="distraction-bar">
+          <input
+            id="distractionInput"
+            class="distraction-box"
+            type="text"
+            placeholder="Distraction&hellip;"
+            autocomplete="off"
+            aria-label="Add a distraction"
+          />
+          <button
+            id="distractionToggle"
+            class="distraction-toggle"
+            type="button"
+            title="Show distractions"
+            aria-label="Show distractions"
+            aria-expanded="false"
+            hidden
+          >
+            <span id="distractionCount" class="distraction-count">0</span>
+            <svg class="chev" viewBox="0 0 24 24" width="14" height="14" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+        </div>
+        <ul id="distractionList" class="distraction-list" hidden></ul>
+      </section>
       </div>
     </main>
 

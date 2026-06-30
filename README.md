@@ -12,13 +12,10 @@ It is not a task manager, not a notes app, and not an AI assistant.
   badge tag for the focused window's project (initials or first letters), with the
   full name in the icon's tooltip. (Chrome doesn't let extensions label the tab
   bar itself, so the badge is the closest always-visible indicator.)
-- The native side-panel header already shows **Sidebar Sid** with the icon, so the
-  in-panel header just shows the current window's project in **bold** — telling you
-  which window this is without repeating the title.
-- The panel is two white cards on a background tinted to match Chrome's profile
-  theme colour: a **global (chrome) card** on top (day theme, planner, distractions
-  — shared across all windows) and a **per-project (window) card** below (project
-  bar, notes, removed tabs).
+- The panel is two cards, flush to the panel edges on a plain background: the
+  **per-project (window) card** on top (project bar, notes, removed tabs) and the
+  **global (chrome) card** below (day theme, planner, distractions — shared across
+  all windows).
 - The header is a single project combobox: click to see all projects, type to
   filter, and Enter on a new name creates it. Typing a name that already exists
   switches to it (never merges). Header icons act on the current project:
@@ -37,9 +34,10 @@ It is not a task manager, not a notes app, and not an AI assistant.
 - **Planner** — two global columns: a free-form **schedule** (left) and an
   auto-numbered **task** list (right). Type in a column's input and press Enter to
   add a tile; the next empty input is ready immediately (no number shown until a
-  task actually exists, so only created tasks are numbered 1..N). Click a tile's
-  text to edit it in place. Tasks can be completed with a **tick** that strikes
-  them through; schedule tiles are plain (no tick, no strike).
+  task actually exists, so only created tasks are numbered 1..N). Each task shows
+  its **number** on the left; click it to complete the task — the number turns
+  into a **tick** and the text strikes through (click again to undo). Click a
+  tile's text to edit it in place. Schedule tiles are plain (no number, no strike).
 - **Distractions** — one global quick-capture box at the bottom of the panel.
   Click it, type a distraction, and press Enter; it's saved and the box clears
   (nothing expands). Once you've captured something, a **count + chevron** appears
