@@ -26,18 +26,23 @@ It is not a task manager, not a notes app, and not an AI assistant.
   (rename in place), and **archive**.
   The whole panel is styled like a plain written document — no tiles, boxes, or
   list buttons; you type straight onto lines.
-- **Notes** — an open, bulleted scratchpad for the project. The bottom line is
-  always an empty bullet you write on: **Enter** commits it as a bulleted note
-  (**Shift+Enter** inserts a newline) and the line clears, ready for the next.
-  Committed notes are plain bulleted text — **single-click** a note to copy it
-  (brief confirmation), **double-click** to delete it.
-- **Planner** — two global columns of plain text: a **schedule** (left, bulleted)
-  and a **task** list (right, numbered). Above the schedule sits today's **day and
+- **Notes** — an open, bulleted scratchpad that behaves like a small text editor.
+  The bottom line is always an empty bullet you write on: **Enter** commits it as a
+  bulleted note (**Shift+Enter** inserts a newline); **Backspace** at the very start
+  of the write-line pulls the previous bullet back in to edit it. Committed notes
+  are plain bulleted text — **single-click** to copy (brief confirmation),
+  **double-click** to delete. Beneath the lowest bullet, **copy-all** and
+  **clear-all** icons copy every note (one per line) or empty the list.
+- **Planner** — two global columns: a plain-text **schedule** (left, no bullets)
+  and a numbered **task** list (right). Above the schedule sits today's **day and
   date**; above the tasks sits a **theme** line (a short global label, autosaved).
   Type on a column's bottom line and press Enter to add an entry. **Schedule**
-  lines: single-click copies, double-click deletes. **Tasks** keep a done state —
-  single-click toggles **strikethrough** (the task stays in place as a record of
-  done vs. left), double-click deletes. To change a line, delete it and retype.
+  lines: single-click copies, double-click deletes, and **Backspace** at the start
+  of the add-line pulls the previous item back to edit it. **Tasks** keep a done
+  state — single-click toggles **strikethrough** (the task stays in place as a
+  record of done vs. left), double-click deletes.
+- A link at the **top-right of the global section** opens the full-page
+  ([new tab](#new-tab-page-preview)) view of these global surfaces.
 - **Distractions** — one global quick-capture box at the bottom of the panel.
   Click it, type a distraction, and press Enter; it's saved and the box clears
   (nothing expands). Once you've captured something, a **count + chevron** appears

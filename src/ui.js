@@ -15,6 +15,9 @@ const els = {
   projectListbox: document.getElementById('projectListbox'),
   renameInput: document.getElementById('renameInput'),
   undoButton: document.getElementById('undoButton'),
+  newtabLink: document.getElementById('newtabLink'),
+  copyAllButton: document.getElementById('copyAllButton'),
+  completeAllButton: document.getElementById('completeAllButton'),
   saveProjectButton: document.getElementById('saveProjectButton'),
   renameButton: document.getElementById('renameButton'),
   archiveButton: document.getElementById('archiveButton'),
@@ -111,20 +114,28 @@ function bindEvents() {
   els.projectListbox.addEventListener('mousedown', (e) => e.preventDefault());
 
   els.undoButton.addEventListener('click', undo);
+  els.newtabLink.addEventListener('click', () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL('newtab.html') });
+  });
   els.saveProjectButton.addEventListener('click', saveProject);
   els.renameButton.addEventListener('click', enterRename);
   els.renameInput.addEventListener('keydown', onRenameKey);
   els.renameInput.addEventListener('blur', exitRename);
   els.archiveButton.addEventListener('click', archiveCurrent);
 
-  // Note compose row: type freely (wrapping); Enter commits, Shift+Enter newline.
+  // Note compose row works like a text editor: Enter commits (Shift+Enter newline),
+  // and Backspace at the very start merges the previous bullet back in to edit it.
   els.noteComposeRow.addEventListener('input', () => autoGrow(els.noteComposeRow));
   els.noteComposeRow.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       commitCompose();
+    } else if (e.key === 'Backspace' && atStart(els.noteComposeRow)) {
+      pullBackNote(e);
     }
   });
+  els.copyAllButton.addEventListener('click', copyAllNotes);
+  els.completeAllButton.addEventListener('click', clearAllNotes);
 
   // Theme: a single day-agnostic label (above the task column). Snapshot once per
   // editing session (on focus) so undo reverts the whole edit, not each keystroke.
@@ -160,8 +171,15 @@ function bindEvents() {
     renderDistractions();
   });
 
-  // Planner: schedule (left) + numbered tasks (right). Enter adds the next tile.
-  els.scheduleInput.addEventListener('keydown', (e) => addOnEnter(e, els.scheduleInput, 'schedule'));
+  // Planner: schedule (left, plain editable) + numbered tasks (right). Enter adds;
+  // on the schedule line, Backspace at the start pulls the previous item back to edit.
+  els.scheduleInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' && atStart(els.scheduleInput)) {
+      pullBackListItem(e, els.scheduleInput, 'schedule');
+    } else {
+      addOnEnter(e, els.scheduleInput, 'schedule');
+    }
+  });
   els.taskInput.addEventListener('keydown', (e) => addOnEnter(e, els.taskInput, 'tasks'));
 
   bindTabWatch();
@@ -423,6 +441,49 @@ function deleteNote(index) {
   renderNotes();
 }
 
+// Backspace at the start of the compose line merges the previous bullet back in
+// (its text + the compose text), caret at the join — like a text editor.
+function pullBackNote(event) {
+  if (!currentProject) return;
+  const notes = projects.getProject(state, currentProject).notes || [];
+  if (!notes.length) return;
+  event.preventDefault();
+  pushUndo();
+  const prev = notes[notes.length - 1];
+  projects.removeNote(state, currentProject, notes.length - 1);
+  const combined = prev + els.noteComposeRow.value;
+  scheduleSave();
+  renderNotes();
+  els.noteComposeRow.value = combined;
+  autoGrow(els.noteComposeRow);
+  els.noteComposeRow.focus();
+  els.noteComposeRow.setSelectionRange(prev.length, prev.length);
+}
+
+// Copy every note (one per line) without removing them.
+function copyAllNotes() {
+  if (!currentProject) return;
+  const items = projects.getProject(state, currentProject).notes || [];
+  if (!items.length) return;
+  copyText(items.join('\n'), els.copyAllButton);
+}
+
+// Clear all notes.
+function clearAllNotes() {
+  if (!currentProject) return;
+  const items = projects.getProject(state, currentProject).notes || [];
+  if (!items.length) return;
+  pushUndo();
+  projects.clearNotes(state, currentProject);
+  scheduleSave();
+  renderNotes();
+}
+
+// True when the caret sits at the very start of a field, with no selection.
+function atStart(field) {
+  return field.selectionStart === 0 && field.selectionEnd === 0;
+}
+
 // Copy text to the clipboard and briefly confirm on the element.
 async function copyText(text, button) {
   try {
@@ -494,6 +555,22 @@ function addOnEnter(event, input, key) {
   input.value = '';
   scheduleSave();
   renderPlanner();
+}
+
+// Backspace at the start of a planner add-line pulls the previous item back into
+// the line to edit it (text + the line's text), caret at the join.
+function pullBackListItem(event, input, key) {
+  const items = state[key] || [];
+  if (!items.length) return;
+  event.preventDefault();
+  pushUndo();
+  const prev = items[items.length - 1].text;
+  projects.removeFromList(state, key, items.length - 1);
+  input.value = prev + input.value;
+  scheduleSave();
+  renderPlanner();
+  input.focus();
+  input.setSelectionRange(prev.length, prev.length);
 }
 
 // Planner: schedule (left) and tasks (right) as plain text lists. Bullets and
@@ -590,6 +667,8 @@ function renderNotes() {
 
   els.noteComposeRow.disabled = !bound;
   els.noteComposeRow.placeholder = bound ? '' : 'Pick a project first';
+  els.copyAllButton.disabled = !items.length;
+  els.completeAllButton.disabled = !items.length;
 
   // Rebuild only the committed rows; the compose row at the end is persistent
   // so in-progress text and focus survive a re-render.
