@@ -70,6 +70,28 @@ body {
   border-top: 1px solid var(--border);
 }
 
+/* Top-right link to the full-page (new tab) view */
+.chrome-head {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: -8px; /* let the planner sit close beneath the line */
+}
+
+.newtab-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.newtab-link:hover {
+  color: var(--text);
+}
+
 .window-panel {
   display: flex;
   flex-direction: column;
@@ -259,6 +281,43 @@ body {
 
 .note-compose-item::before {
   flex: none;
+}
+
+/* Bulk actions beneath the lowest note: copy all / clear all */
+.note-toolbar {
+  display: flex;
+  gap: 2px;
+  margin-top: 6px;
+}
+
+.note-btn {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  opacity: 0.75;
+}
+
+.note-btn:hover {
+  color: var(--text);
+  opacity: 1;
+}
+
+.note-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.note-btn.copied {
+  color: var(--ok);
+  opacity: 1;
 }
 
 /* Status dot on the save icon: green = saved, red = unsaved changes */
