@@ -121,8 +121,9 @@ function bindEvents() {
   els.projectListbox.addEventListener('mousedown', (e) => e.preventDefault());
 
   els.undoButton.addEventListener('click', undo);
+  // Now the actual Chrome new-tab page, so opening a fresh tab is enough.
   els.newtabLink.addEventListener('click', () => {
-    chrome.tabs.create({ url: chrome.runtime.getURL('newtab.html') });
+    chrome.tabs.create({});
   });
   els.renameButton.addEventListener('click', enterRename);
   els.renameInput.addEventListener('keydown', onRenameKey);
