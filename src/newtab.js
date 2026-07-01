@@ -20,13 +20,20 @@ const els = {
   taskList: document.getElementById('taskList'),
   taskInput: document.getElementById('taskInput'),
   distractionInput: document.getElementById('distractionInput'),
-  distractionList: document.getElementById('distractionList')
+  distractionList: document.getElementById('distractionList'),
+  projectsSection: document.getElementById('projectsSection'),
+  projectsSummary: document.getElementById('projectsSummary'),
+  projectsList: document.getElementById('projectsList'),
+  backupsSection: document.getElementById('backupsSection'),
+  backupsSummary: document.getElementById('backupsSummary'),
+  backupsList: document.getElementById('backupsList')
 };
 
 let state = projects.emptyState();
 let saveTimer = null;
 let editingTile = null; // { key, index } of the planner line being edited, or null
 let dragSource = null; // { key, index } of the schedule line being dragged, or null
+let editingProject = null; // name of the project being renamed inline, or null
 
 init().catch((error) => console.error(error));
 
@@ -34,6 +41,7 @@ async function init() {
   state = projects.normaliseState(await storage.load());
   renderAll();
   bindEvents();
+  renderBackups();
 
   // Stay live alongside the side panel (and any other window).
   storage.onChange((incoming) => {
@@ -72,6 +80,7 @@ function renderAll() {
   renderHeader();
   renderPlanner();
   renderDistractions();
+  renderProjects();
 }
 
 function renderHeader() {
@@ -316,6 +325,138 @@ function flash(el) {
     el.classList.remove('copied');
     delete el.dataset.flashing;
   }, FLASH_MS);
+}
+
+// --- Projects (rename + archive live here, not in the side panel) ----------
+
+// Active projects first (click the name to rename inline), then archived ones
+// (Restore brings them back). There's no "current project" on this page — every
+// action here names the project explicitly.
+function renderProjects() {
+  const active = projects.projectNames(state);
+  const archived = projects.archivedNames(state);
+  els.projectsSection.hidden = active.length + archived.length === 0;
+  els.projectsSummary.textContent = `Projects (${active.length})`;
+
+  els.projectsList.innerHTML = '';
+  active.forEach((name) => els.projectsList.appendChild(buildProjectRow(name, false)));
+  archived.forEach((name) => els.projectsList.appendChild(buildProjectRow(name, true)));
+}
+
+function buildProjectRow(name, isArchived) {
+  const li = document.createElement('li');
+  li.className = 'removed-item';
+
+  const meta = document.createElement('div');
+  meta.className = 'removed-meta';
+
+  if (editingProject === name && !isArchived) {
+    const input = document.createElement('input');
+    input.id = 'projectRenameInput';
+    input.className = 'project-rename-edit';
+    input.type = 'text';
+    input.value = name;
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        commitProjectRename(name, input.value);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        editingProject = null;
+        renderProjects();
+      }
+    });
+    input.addEventListener('blur', () => commitProjectRename(name, input.value));
+    meta.appendChild(input);
+    li.appendChild(meta);
+  } else {
+    const title = document.createElement('div');
+    title.className = `removed-title${isArchived ? ' is-archived' : ' editable'}`;
+    title.textContent = name;
+    if (!isArchived) {
+      title.title = 'Click to rename';
+      title.addEventListener('click', () => startProjectRename(name));
+    }
+    meta.appendChild(title);
+    li.appendChild(meta);
+
+    const action = document.createElement('button');
+    action.type = 'button';
+    if (isArchived) {
+      action.textContent = 'Restore';
+      action.addEventListener('click', () => {
+        projects.restoreProject(state, name);
+        scheduleSave();
+        renderProjects();
+      });
+    } else {
+      action.textContent = 'Archive';
+      action.addEventListener('click', () => {
+        projects.archiveProject(state, name);
+        scheduleSave();
+        renderProjects();
+      });
+    }
+    li.appendChild(action);
+  }
+
+  return li;
+}
+
+function startProjectRename(name) {
+  editingProject = name;
+  renderProjects();
+  const input = document.getElementById('projectRenameInput');
+  if (input) {
+    input.focus();
+    input.select();
+  }
+}
+
+function commitProjectRename(oldName, value) {
+  editingProject = null;
+  const clean = projects.normaliseName(value);
+  // renameProject switches to an existing name rather than merging.
+  if (clean && clean !== oldName) {
+    projects.renameProject(state, oldName, clean);
+    scheduleSave();
+  }
+  renderProjects();
+}
+
+// --- Backups -----------------------------------------------------------
+
+// One automatic snapshot per day (see storage.js); each Restore replaces the
+// live state with that day's snapshot, which then syncs to every open window.
+async function renderBackups() {
+  const dates = await storage.listBackups();
+  els.backupsSection.hidden = dates.length === 0;
+  els.backupsSummary.textContent = `Backups (${dates.length})`;
+
+  els.backupsList.innerHTML = '';
+  dates.forEach((date) => {
+    const li = document.createElement('li');
+    li.className = 'removed-item';
+
+    const meta = document.createElement('div');
+    meta.className = 'removed-meta';
+    const title = document.createElement('div');
+    title.className = 'removed-title';
+    title.textContent = date;
+    meta.appendChild(title);
+    li.appendChild(meta);
+
+    const restore = document.createElement('button');
+    restore.type = 'button';
+    restore.textContent = 'Restore';
+    restore.addEventListener('click', () => {
+      const ok = confirm(`Restore the ${date} backup? This replaces everything currently saved.`);
+      if (ok) storage.restoreBackup(date);
+    });
+    li.appendChild(restore);
+
+    els.backupsList.appendChild(li);
+  });
 }
 
 function scheduleSave() {

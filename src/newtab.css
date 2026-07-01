@@ -35,6 +35,17 @@
 .nt-distractions {
   border-top: none;
   padding-top: 0;
+  margin-bottom: 24px;
+}
+
+/* Projects / Backups: reuse the sidebar's quiet ".removed" disclosure look,
+   just spaced out for this page instead of pinned to a flex column's bottom. */
+.nt-util {
+  margin-top: 0;
+}
+
+.nt-util + .nt-util {
+  margin-top: 24px;
 }
 
 /* Section title above the distractions box */
