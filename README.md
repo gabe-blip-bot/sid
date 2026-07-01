@@ -104,6 +104,14 @@ other. It's global-only — no project bar, notes, or tabs here; the side panel'
 
 After editing files, click **Reload** on the Sid card.
 
+## Updating
+
+Sid stays an unpacked, local install on purpose — no store, no auto-update
+mechanism (Chrome only checks `update_url` for packaged/enterprise-managed
+installs, not `Load unpacked`). To pick up changes: `git pull`, then reload the
+extension. `./update.sh` does both steps — pulls the latest commit and prints a
+reminder to reload — from wherever you cloned the repo.
+
 ## Keyboard shortcut
 
 Press **Ctrl+Shift+. (period)** (**Cmd+Shift+.** on macOS) to toggle the side
