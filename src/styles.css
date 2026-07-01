@@ -511,8 +511,8 @@ body {
   padding: 6px 12px;
 }
 
-/* Distractions: one module — click to type, chevron on the right to expand.
-   A light line separates it from the planner above. */
+/* Distractions: a quick-capture line, no in-panel review (see the new-tab page
+   for the always-visible list). A light line separates it from the planner above. */
 .distractions {
   display: flex;
   flex-direction: column;
@@ -521,17 +521,8 @@ body {
   border-top: 1px solid var(--border);
 }
 
-.distraction-bar {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  border: none;
-  background: transparent;
-}
-
 .distraction-box {
-  flex: 1;
-  min-width: 0;
+  width: 100%;
   padding: 1px 0;
   border: none;
   background: transparent;
@@ -545,43 +536,11 @@ body {
   color: var(--muted);
 }
 
-/* Count + chevron: appears once something is captured; click to expand. */
-.distraction-toggle {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  height: 26px;
-  margin-right: 3px;
-  padding: 0 6px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--muted);
-  font: inherit;
-  font-size: 11px;
-}
-
-.distraction-toggle:hover {
-  background: var(--button-hover);
-  color: var(--text);
-}
-
-.distraction-toggle .chev {
-  display: block;
-  transition: transform 0.15s ease;
-}
-
-.distraction-toggle.is-open .chev {
-  transform: rotate(180deg);
-}
-
+/* Review list (new-tab page only): plain lines like notes. */
 .distraction-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 180px;
-  overflow-y: auto;
 }
 
 .status {

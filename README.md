@@ -44,20 +44,18 @@ It is not a task manager, not a notes app, and not an AI assistant.
 - A link at the **top-right of the global section** opens the full-page
   ([new tab](#new-tab-page-preview)) view of these global surfaces.
 - **Distractions** — one global quick-capture box at the bottom of the panel.
-  Click it, type a distraction, and press Enter; it's saved and the box clears
-  (nothing expands). Once you've captured something, a **count + chevron** appears
-  on the right of the box — click it to expand the captured list, click again to
-  collapse. Each row is plain text: **single-click** copies it, **double-click**
-  deletes it. The chevron hides when the list is empty, and distractions are
-  shared across every window.
+  Click it, type a distraction, and press Enter; it's saved and the box clears —
+  that's the whole interaction in the panel (no in-panel review; distractions are
+  shared across every window). Open the **new tab page** to see and manage the
+  full captured list.
 - **Everything autosaves.** Notes, schedule, tasks, distractions, theme, and the
   project name persist as you type, and the window's reopenable tabs (title + URL,
   in order) are **snapshotted automatically** whenever the tabs change — there's no
   save button.
 - **Removed Tabs** — when the auto-snapshot no longer contains a previously seen
-  tab (you closed it or navigated away), it's archived here (by URL, deduped, most
-  recent 25). **Restore** reopens it and clears it from the list; a tab that
-  reappears leaves the archive automatically.
+  tab (you closed it or navigated away), it's archived here (by URL, deduped). The
+  panel shows the **5 most recent**. **Restore** reopens it and clears it from the
+  list; a tab that reappears leaves the archive automatically.
 - **Archiving** a project hides it from the switcher and moves its window(s) to
   another active project; its notes and saved tabs are kept. (Restoring and
   deleting archived projects will live on a separate surface, not the side
@@ -79,18 +77,22 @@ All data stays in Chrome local storage. No accounts, no network requests.
 ## New tab page
 
 `newtab.html` **replaces Chrome's new tab page** (`chrome_url_overrides.newtab`).
-Opening a fresh tab shows a full-page view of Sid's **global** surfaces — the
-day/date + theme header, the schedule and task lists (no column headers, just the
-lists), and distractions — laid out as a centered column for a wide page. Schedule
-and tasks behave exactly as they do in the side panel: single-click a line to edit
-it in place, double-click to delete, schedule lines drag to reorder, and the
-`Schedule…`/`Task…` hints only show on an empty list. Distractions start
-**expanded** here (rather than collapsed, as in the narrow panel) since there's
-room to show them by default. It reads and writes the **same**
-`chrome.storage.local` state as the side panel (via `projects.js` / `storage.js`)
-and updates live, so edits in one show in the other. It's global-only — no project
-bar, notes, or tabs here; the side panel's **new-tab icon** (top-right of the
-global section) also opens one.
+Opening a fresh tab shows a full-page view of Sid's **global** surfaces, laid out
+as a centered column for a wide page: today's **day and date** at the top (with a
+line beneath it), then the **schedule** (left) and **theme + tasks** (right, theme
+directly above the task list) side by side, and **distractions** below. There are
+no column-header labels, just the lists.
+
+Schedule and tasks behave exactly as they do in the side panel: single-click a
+line to edit it in place, double-click to delete, schedule lines drag to reorder,
+and the `Schedule…`/`Task…` hints only show on an empty list. Distractions are
+always shown here — no toggle, unlike the panel — with an add line and the full
+captured list beneath it (single-click copies a line, double-click deletes).
+
+It reads and writes the **same** `chrome.storage.local` state as the side panel
+(via `projects.js` / `storage.js`) and updates live, so edits in one show in the
+other. It's global-only — no project bar, notes, or tabs here; the side panel's
+**new-tab icon** (top-right of the global section) also opens one.
 
 ## Install
 

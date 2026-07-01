@@ -380,11 +380,10 @@ export function captureWorkspace(project, tabs, now) {
     }
   }
 
-  // Cap the archive (most recently removed first) so auto-capture can't grow it
-  // without bound.
+  // Keep only the most recently removed tabs (the panel shows the last 5).
   const removedTabs = [...archive.values()]
     .sort((a, b) => (b.removedAt || 0) - (a.removedAt || 0))
-    .slice(0, 25);
+    .slice(0, 5);
 
   return {
     ...project,
