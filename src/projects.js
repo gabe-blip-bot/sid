@@ -22,6 +22,8 @@ export function emptyState() {
     distractions: [],
     schedule: [],
     tasks: [],
+    notepad: [], // global scratchpad (new-tab page only), distinct from the
+    // long-retired `scratchpad` field migrated into distractions below
     windows: {},
     openWindows: {}
   };
@@ -39,10 +41,16 @@ export function normaliseState(loaded) {
     loaded && loaded.distractions !== undefined ? loaded.distractions : loaded && loaded.scratchpad;
   state.distractions = toNoteList(rawDistractions);
   delete state.scratchpad;
+  state.notepad = toNoteList(state.notepad);
   state.schedule = toTileList(state.schedule);
   state.tasks = toTileList(state.tasks);
   for (const name of Object.keys(state.projects)) {
     state.projects[name].notes = toNoteList(state.projects[name].notes);
+    // Re-apply the 5-item cap retroactively, so data saved before the cap was
+    // lowered doesn't keep showing old, larger archives forever.
+    if (Array.isArray(state.projects[name].removedTabs)) {
+      state.projects[name].removedTabs = capRemovedTabs(state.projects[name].removedTabs);
+    }
   }
   return state;
 }
@@ -78,6 +86,16 @@ function toTileList(items) {
         : { text: ((it && it.text) || '').trim(), done: !!(it && it.done) }
     )
     .filter((it) => it.text !== '');
+}
+
+// Keep only the 5 most recently removed tabs (the panel shows the last 5).
+// Shared by captureWorkspace (write time) and normaliseState (load time, so
+// data saved under an older, larger cap gets trimmed retroactively too).
+const REMOVED_TABS_LIMIT = 5;
+function capRemovedTabs(removedTabs) {
+  return [...removedTabs]
+    .sort((a, b) => (b.removedAt || 0) - (a.removedAt || 0))
+    .slice(0, REMOVED_TABS_LIMIT);
 }
 
 // Active (non-archived) project names, sorted for the switcher.
@@ -138,6 +156,19 @@ export function editNote(state, name, index, text) {
 export function clearNotes(state, name) {
   const project = state.projects[name];
   if (project) project.notes = [];
+}
+
+// --- Scratchpad (a global raw notepad, new-tab page only — not per-project) -
+
+export function addScratchpadNote(state, text) {
+  const item = text.trim();
+  if (!item) return;
+  if (!Array.isArray(state.notepad)) state.notepad = [];
+  state.notepad.push(item);
+}
+
+export function removeScratchpadNote(state, index) {
+  if (Array.isArray(state.notepad)) state.notepad.splice(index, 1);
 }
 
 // --- Distractions (a global quick-capture list) ----------------------------
@@ -300,9 +331,10 @@ export function normaliseName(value) {
 }
 
 // Decide what the project combobox should show for the typed text. Pure so the
-// select/create logic can be tested without the DOM. Renaming is handled
-// separately (the header pencil), not through typed text.
-//   - resting (text empty or equal to current): list every project
+// select/create logic can be tested without the DOM. Renaming/archiving happen
+// on the new-tab page, not through this box.
+//   - resting (text empty or equal to current): list every project, plus a
+//     persistent "create new" row at the bottom (discoverable without typing)
 //   - typed an existing, non-current name: list it + an "already exists" hint
 //     (a switch, never a merge)
 //   - typed a new name: a single Create row
@@ -317,12 +349,12 @@ export function projectMenuRows(names, typedRaw, currentProject) {
 
   const rows = matches.map((name) => ({ kind: 'project', name }));
 
-  if (!resting) {
-    if (exact) {
-      rows.push({ kind: 'hint', text: `"${exact}" already exists` });
-    } else {
-      rows.push({ kind: 'create', name: typed });
-    }
+  if (resting) {
+    rows.push({ kind: 'create-new' });
+  } else if (exact) {
+    rows.push({ kind: 'hint', text: `"${exact}" already exists` });
+  } else {
+    rows.push({ kind: 'create', name: typed });
   }
   return { rows, exact };
 }
@@ -368,15 +400,10 @@ export function captureWorkspace(project, tabs, now) {
     }
   }
 
-  // Keep only the most recently removed tabs (the panel shows the last 5).
-  const removedTabs = [...archive.values()]
-    .sort((a, b) => (b.removedAt || 0) - (a.removedAt || 0))
-    .slice(0, 5);
-
   return {
     ...project,
     workspace: { savedAt: now, tabs: newTabs },
-    removedTabs
+    removedTabs: capRemovedTabs([...archive.values()])
   };
 }
 

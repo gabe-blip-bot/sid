@@ -13,6 +13,7 @@ const SVG_OPEN =
   '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
 const ICON_COPY = `${SVG_OPEN}<path d="M9 9h11v11H9z"/><path d="M5 15H4V4h11v1"/></svg>`;
 const ICON_CLEAR = `${SVG_OPEN}<path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+const ICON_TICK = `${SVG_OPEN}<path d="M20 6 9 17l-5-5"/></svg>`;
 
 const els = {
   projectInput: document.getElementById('projectInput'),
@@ -21,6 +22,7 @@ const els = {
   newtabLink: document.getElementById('newtabLink'),
   copyAllButton: document.getElementById('copyAllButton'),
   completeAllButton: document.getElementById('completeAllButton'),
+  notesSection: document.getElementById('notesSection'),
   noteList: document.getElementById('noteList'),
   noteComposeItem: document.getElementById('noteComposeItem'),
   noteComposeRow: document.getElementById('noteComposeRow'),
@@ -141,6 +143,17 @@ function bindEvents() {
   });
   els.copyAllButton.addEventListener('click', copyAllNotes);
   els.completeAllButton.addEventListener('click', clearAllNotes);
+  // Click anywhere in the notes area (a committed line, or blank space) to
+  // start typing, instead of requiring a precise click on the write-line.
+  // Skip it for a per-line button click, and don't steal an active text
+  // selection (so manual copy-by-drag still works).
+  els.notesSection.addEventListener('click', (e) => {
+    if (e.target.closest('.note-line-btn') || e.target === els.noteComposeRow) return;
+    if (window.getSelection().toString()) return;
+    els.noteComposeRow.focus();
+    const len = els.noteComposeRow.value.length;
+    els.noteComposeRow.setSelectionRange(len, len);
+  });
 
   // Distractions: capture-and-hide, no in-panel review (see the new-tab page for
   // the full list). Enter adds and clears the line.
@@ -264,6 +277,9 @@ function renderList() {
       } else if (row.kind === 'create') {
         li.classList.add('combo-action');
         li.textContent = `Create "${row.name}"`;
+      } else if (row.kind === 'create-new') {
+        li.classList.add('combo-action');
+        li.textContent = '+ Create new project';
       }
       li.addEventListener('click', () => commitRow(row));
       li.addEventListener('mousemove', () => setHighlight(i));
@@ -308,6 +324,16 @@ function moveHighlight(delta) {
 
 function commitRow(row) {
   if (row.kind === 'project' || row.kind === 'create') gotoProject(row.name);
+  else if (row.kind === 'create-new') startCreateNew();
+}
+
+// Clear the box (keeping the dropdown open and focused) so the cursor is ready
+// for the user to type a new project's name — the discoverable alternative to
+// already knowing you can just type a novel name.
+function startCreateNew() {
+  els.projectInput.value = '';
+  renderList();
+  els.projectInput.focus();
 }
 
 // Switch to a project, creating it if the name is new.
@@ -523,12 +549,22 @@ function renderTileColumn(listEl, items, key) {
   const numbered = key === 'tasks';
   items.forEach((item, i) => {
     const li = document.createElement('li');
-    li.className = 'planner-item';
+    li.className = `planner-item${numbered && item.done ? ' done' : ''}`;
 
     if (numbered) {
+      // The number doubles as a tick: click it to toggle done (immediate, no
+      // edit/delete disambiguation needed), independent of the text's own
+      // click-to-edit. stopPropagation keeps that click from also starting an
+      // edit on the row.
       const num = document.createElement('span');
       num.className = 'planner-num';
-      num.textContent = `${i + 1}.`;
+      if (item.done) num.innerHTML = ICON_TICK;
+      else num.textContent = `${i + 1}.`;
+      num.title = item.done ? 'Mark not done' : 'Mark done';
+      num.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleTask(i);
+      });
       li.appendChild(num);
     }
 
@@ -615,6 +651,14 @@ function cancelTileEdit() {
 function deleteTile(key, index) {
   pushUndo();
   projects.removeFromList(state, key, index);
+  scheduleSave();
+  renderPlanner();
+}
+
+// Click a task's number to toggle its done/strikethrough state in place.
+function toggleTask(index) {
+  pushUndo();
+  projects.toggleListItem(state, 'tasks', index);
   scheduleSave();
   renderPlanner();
 }
