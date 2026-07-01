@@ -1,7 +1,8 @@
 // newtab.js
 // A standalone, full-page view of Sid's GLOBAL surfaces (day/date, schedule,
-// tasks, distractions). It reads and writes the same chrome.storage state as the
-// side panel, so the two stay in sync. No project/notes/tabs here.
+// tasks, a scratchpad, distractions), plus project management (rename/archive)
+// and backups. It reads and writes the same chrome.storage state as the side
+// panel, so the two stay in sync. No per-project notes or tabs here.
 //
 // Rendering largely mirrors the panel's plain-text model (ui.js). Some logic is
 // duplicated for this first cut; we'll extract a shared module only if it sticks.
@@ -13,12 +14,22 @@ const SAVE_DELAY = 400; // ms to debounce autosave writes
 const FLASH_MS = 900; // how long a "copied" confirmation shows
 const CLICK_DELAY = 220; // ms to wait for a second click before acting
 
+const SVG_OPEN =
+  '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+const ICON_COPY = `${SVG_OPEN}<path d="M9 9h11v11H9z"/><path d="M5 15H4V4h11v1"/></svg>`;
+const ICON_CLEAR = `${SVG_OPEN}<path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+const ICON_TICK = `${SVG_OPEN}<path d="M20 6 9 17l-5-5"/></svg>`;
+
 const els = {
   dayDate: document.getElementById('dayDate'),
   scheduleList: document.getElementById('scheduleList'),
   scheduleInput: document.getElementById('scheduleInput'),
   taskList: document.getElementById('taskList'),
   taskInput: document.getElementById('taskInput'),
+  scratchpadSection: document.getElementById('scratchpadSection'),
+  scratchpadList: document.getElementById('scratchpadList'),
+  scratchpadComposeItem: document.getElementById('scratchpadComposeItem'),
+  scratchpadComposeRow: document.getElementById('scratchpadComposeRow'),
   distractionInput: document.getElementById('distractionInput'),
   distractionList: document.getElementById('distractionList'),
   projectsSection: document.getElementById('projectsSection'),
@@ -62,6 +73,26 @@ function bindEvents() {
   });
   els.taskInput.addEventListener('keydown', (e) => addOnEnter(e, els.taskInput, 'tasks'));
 
+  // Scratchpad: same raw-notepad model as the side panel's notes, but global.
+  els.scratchpadComposeRow.addEventListener('input', () => autoGrow(els.scratchpadComposeRow));
+  els.scratchpadComposeRow.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      commitScratchpad();
+    } else if (e.key === 'Backspace' && atStart(els.scratchpadComposeRow)) {
+      pullBackScratchpad(e);
+    }
+  });
+  // Click anywhere in the scratchpad (a committed line, or blank space) to
+  // start typing, without stealing an active text selection.
+  els.scratchpadSection.addEventListener('click', (e) => {
+    if (e.target.closest('.note-line-btn') || e.target === els.scratchpadComposeRow) return;
+    if (window.getSelection().toString()) return;
+    els.scratchpadComposeRow.focus();
+    const len = els.scratchpadComposeRow.value.length;
+    els.scratchpadComposeRow.setSelectionRange(len, len);
+  });
+
   // Distractions: always shown on this full page (no toggle) — Enter adds.
   els.distractionInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
@@ -79,6 +110,7 @@ function bindEvents() {
 function renderAll() {
   renderHeader();
   renderPlanner();
+  renderScratchpad();
   renderDistractions();
   renderProjects();
 }
@@ -140,12 +172,20 @@ function renderTileColumn(listEl, items, key) {
   const numbered = key === 'tasks';
   items.forEach((item, i) => {
     const li = document.createElement('li');
-    li.className = 'planner-item';
+    li.className = `planner-item${numbered && item.done ? ' done' : ''}`;
 
     if (numbered) {
+      // The number doubles as a tick: click it to toggle done (immediate),
+      // independent of the text's own click-to-edit.
       const num = document.createElement('span');
       num.className = 'planner-num';
-      num.textContent = `${i + 1}.`;
+      if (item.done) num.innerHTML = ICON_TICK;
+      else num.textContent = `${i + 1}.`;
+      num.title = item.done ? 'Mark not done' : 'Mark done';
+      num.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleTask(i);
+      });
       li.appendChild(num);
     }
 
@@ -234,6 +274,13 @@ function deleteTile(key, index) {
   renderPlanner();
 }
 
+// Click a task's number to toggle its done/strikethrough state in place.
+function toggleTask(index) {
+  projects.toggleListItem(state, 'tasks', index);
+  scheduleSave();
+  renderPlanner();
+}
+
 // Drag-and-drop reorder for planner lines (schedule or tasks, each within its
 // own column only).
 function attachTileDrag(li, key, index) {
@@ -267,6 +314,86 @@ function attachTileDrag(li, key, index) {
       renderPlanner();
     }
   });
+}
+
+// --- Scratchpad (global raw notepad, same model as the side panel's notes) --
+
+// Rebuild only the committed rows; the compose row at the end is persistent so
+// in-progress text and focus survive a re-render.
+function renderScratchpad() {
+  const items = state.notepad || [];
+  els.scratchpadComposeRow.placeholder = items.length ? '' : 'Notes…';
+
+  els.scratchpadList.querySelectorAll('.note-item').forEach((el) => el.remove());
+  items.forEach((text, i) => {
+    const item = document.createElement('li');
+    item.className = 'note-item';
+
+    const textEl = document.createElement('span');
+    textEl.className = 'note-text';
+    textEl.textContent = text;
+
+    const actions = document.createElement('span');
+    actions.className = 'note-actions';
+
+    const copyBtn = document.createElement('button');
+    copyBtn.type = 'button';
+    copyBtn.className = 'note-line-btn';
+    copyBtn.title = 'Copy';
+    copyBtn.setAttribute('aria-label', 'Copy');
+    copyBtn.innerHTML = ICON_COPY;
+    copyBtn.addEventListener('click', () => copyText(text, copyBtn));
+
+    const clearBtn = document.createElement('button');
+    clearBtn.type = 'button';
+    clearBtn.className = 'note-line-btn';
+    clearBtn.title = 'Clear';
+    clearBtn.setAttribute('aria-label', 'Clear');
+    clearBtn.innerHTML = ICON_CLEAR;
+    clearBtn.addEventListener('click', () => deleteScratchpadNote(i));
+
+    actions.append(copyBtn, clearBtn);
+    item.append(textEl, actions);
+    els.scratchpadList.insertBefore(item, els.scratchpadComposeItem);
+  });
+}
+
+function commitScratchpad() {
+  if (!els.scratchpadComposeRow.value.trim()) return;
+  projects.addScratchpadNote(state, els.scratchpadComposeRow.value);
+  els.scratchpadComposeRow.value = '';
+  autoGrow(els.scratchpadComposeRow);
+  scheduleSave();
+  renderScratchpad();
+}
+
+function deleteScratchpadNote(index) {
+  projects.removeScratchpadNote(state, index);
+  scheduleSave();
+  renderScratchpad();
+}
+
+// Backspace at the start of the compose line merges the previous line back in
+// (its text + the compose text), caret at the join.
+function pullBackScratchpad(event) {
+  const items = state.notepad || [];
+  if (!items.length) return;
+  event.preventDefault();
+  const prev = items[items.length - 1];
+  projects.removeScratchpadNote(state, items.length - 1);
+  const combined = prev + els.scratchpadComposeRow.value;
+  scheduleSave();
+  renderScratchpad();
+  els.scratchpadComposeRow.value = combined;
+  autoGrow(els.scratchpadComposeRow);
+  els.scratchpadComposeRow.focus();
+  els.scratchpadComposeRow.setSelectionRange(prev.length, prev.length);
+}
+
+// Resize a textarea to fit its content (so writing wraps across lines).
+function autoGrow(el) {
+  el.style.height = 'auto';
+  el.style.height = `${el.scrollHeight}px`;
 }
 
 // Always visible on this full page — no toggle, just an add line and the list.

@@ -362,10 +362,19 @@ body {
   cursor: pointer;
 }
 
+/* The task number doubles as a tick: click it to toggle done, independent of
+   the text's click-to-edit. */
 .planner-num {
   flex: none;
+  display: inline-flex;
+  align-items: center;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.planner-num svg {
+  display: block;
 }
 
 .planner-text {
@@ -374,12 +383,16 @@ body {
   overflow-wrap: anywhere;
 }
 
-/* Used by the new-tab page: copy-flash and completed-task strikethrough */
+/* Copy-flash (new-tab distractions/schedule) and completed-task strikethrough */
 .planner-item.copied {
   color: var(--ok);
 }
 
-.planner-item.done {
+.planner-item.done .planner-num {
+  color: var(--ok);
+}
+
+.planner-item.done .planner-text {
   text-decoration: line-through;
   color: var(--muted);
 }

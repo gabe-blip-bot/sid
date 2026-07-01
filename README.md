@@ -22,26 +22,32 @@ It is not a task manager, not a notes app, and not an AI assistant.
   light dividing line.
 - The header is a single project **combobox** (a small chevron marks it as a
   dropdown): click to see all projects, type to filter, and Enter on a new name
-  creates it. Typing a name that already exists switches to it (never merges).
-  That's all the sidebar does with projects — **renaming and archiving live on
-  the new tab page** instead. Header icons: **undo** (revert the last content
-  change) and **copy-all** / **clear-all** notes.
+  creates it. Typing a name that already exists switches to it (never merges). A
+  **"+ Create new project"** row always sits at the bottom of the list — click it
+  to clear the box (cursor ready) without first having to type a novel name. That's
+  all the sidebar does with projects — **renaming and archiving live on the new
+  tab page** instead. Header icons: **undo** (revert the last content change) and
+  **copy-all** / **clear-all** notes.
   The whole panel is styled like a plain written document — no tiles, boxes, or
   list buttons; you type straight onto lines.
-- **Notes** — a raw notepad that behaves like a small text editor. The bottom line
-  is always an empty line you write on: **Enter** commits it (**Shift+Enter**
-  inserts a newline); **Backspace** at the very start of the write-line pulls the
-  previous line back in to edit it. Committed lines are plain text; **hover** a line
-  to reveal **copy** and **clear** buttons for it. The header's **copy-all** and
-  **clear-all** icons copy every note (one per line) or empty the list. Empty
-  inputs hint with `Notes…`, `Schedule…`, `Task…`, `Distractions…`, hidden once the
-  list has entries.
+- **Notes** — a raw notepad that behaves like a small text editor. **Click
+  anywhere in the notes area** — a committed line or blank space — to jump the
+  cursor into the write-line, ready to type (it won't steal an active text
+  selection). The bottom line is always an empty line you write on: **Enter**
+  commits it (**Shift+Enter** inserts a newline); **Backspace** at the very start
+  of the write-line pulls the previous line back in to edit it. Committed lines
+  are plain text; **hover** a line to reveal **copy** and **clear** buttons for it.
+  The header's **copy-all** and **clear-all** icons copy every note (one per line)
+  or empty the list. Empty inputs hint with `Notes…`, `Schedule…`, `Task…`,
+  `Distractions…`, hidden once the list has entries.
 - **Planner** — two global columns: a plain-text **schedule** (left, no bullets)
   and a numbered **task** list (right), with today's **day and date** above the
   schedule. Type on a column's bottom line and press Enter to add an entry. On
-  both lists, **single-click a line to edit** it in place (Enter commits, Esc
-  cancels, empty removes it), **double-click to delete** it, and **drag to
-  reorder** within its own column (task numbers renumber automatically).
+  both lists, **single-click a line's text to edit** it in place (Enter commits,
+  Esc cancels, empty removes it), **double-click to delete** it, and **drag to
+  reorder** within its own column (task numbers renumber automatically). A task's
+  **number doubles as a tick** — click it (not the text) to mark it done, turning
+  it into a check mark with the text struck through; click again to undo.
 - A link at the **top-right of the global section** opens the full-page
   ([new tab](#new-tab-page)) view of these global surfaces.
 - **Distractions** — one global quick-capture box at the bottom of the panel.
@@ -54,9 +60,11 @@ It is not a task manager, not a notes app, and not an AI assistant.
   order) are **snapshotted automatically** whenever the tabs change — there's no
   save button.
 - **Removed Tabs** — when the auto-snapshot no longer contains a previously seen
-  tab (you closed it or navigated away), it's archived here (by URL, deduped). The
-  panel shows the **5 most recent**. **Restore** reopens it and clears it from the
-  list; a tab that reappears leaves the archive automatically.
+  tab (you closed it or navigated away), it's archived here (by URL, deduped),
+  capped at the **5 most recent** — enforced both when a new tab is archived and
+  retroactively on load, so it can't linger above 5 from before the cap existed.
+  **Restore** reopens it and clears it from the list; a tab that reappears leaves
+  the archive automatically.
 - **Archiving** a project hides it from the switcher and moves its window(s) to
   another active project; its notes and saved tabs are kept. Renaming, archiving,
   and restoring an archived project all happen on the **new tab page's Projects
@@ -83,11 +91,15 @@ All data stays in Chrome local storage. No accounts, no network requests.
 Opening a fresh tab shows a full-page view of Sid's **global** surfaces, laid out
 as a centered column for a wide page: today's **day and date** at the top (with a
 line beneath it), then the **schedule** and **tasks** columns side by side (no
-column-header labels, just the lists), and a titled **Distractions** section below.
+column-header labels, just the lists), a titled **Scratchpad**, and a titled
+**Distractions** section below.
 
 Schedule and tasks behave exactly as they do in the side panel: single-click a
-line to edit it in place, double-click to delete, and drag to reorder within
-their own column; the `Schedule…`/`Task…` hints only show on an empty list.
+line's text to edit it in place, double-click to delete, and drag to reorder
+within its own column (a task's **number doubles as a tick** — click it to mark
+done); the `Schedule…`/`Task…` hints only show on an empty list. The
+**Scratchpad** is a global raw notepad — the same click-anywhere-to-type, hover
+copy/clear model as the side panel's notes, just not tied to any project.
 Distractions are always shown here — no toggle, unlike the panel — with an add
 line and the full captured list beneath it (single-click copies a line,
 double-click deletes).
