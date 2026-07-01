@@ -329,10 +329,14 @@ function commitRow(row) {
 
 // Clear the box (keeping the dropdown open and focused) so the cursor is ready
 // for the user to type a new project's name — the discoverable alternative to
-// already knowing you can just type a novel name.
+// already knowing you can just type a novel name. renderList()'s default
+// highlight lands on the current project (since the box is now "resting"), which
+// visually looks like it just selected that project — override it to nothing
+// highlighted, since the point here is starting fresh.
 function startCreateNew() {
   els.projectInput.value = '';
   renderList();
+  setHighlight(-1);
   els.projectInput.focus();
 }
 
@@ -438,14 +442,37 @@ function atStart(field) {
   return field.selectionStart === 0 && field.selectionEnd === 0;
 }
 
-// Copy text to the clipboard and briefly confirm on the element.
+// Copy text to the clipboard and briefly confirm on the element. The async
+// Clipboard API can silently reject in a side panel if Chrome doesn't consider
+// the document focused at that instant; fall back to the older execCommand
+// approach (via a throwaway textarea) so the button still works either way.
 async function copyText(text, button) {
   try {
     await navigator.clipboard.writeText(text);
     flash(button);
+    return;
   } catch (error) {
-    console.error(error);
+    console.error('clipboard.writeText failed, falling back', error);
   }
+  if (copyViaExecCommand(text)) flash(button);
+}
+
+function copyViaExecCommand(text) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  let ok = false;
+  try {
+    ok = document.execCommand('copy');
+  } catch (error) {
+    console.error('execCommand copy fallback failed', error);
+  }
+  document.body.removeChild(textarea);
+  return ok;
 }
 
 // Briefly flash a line green to confirm a copy.

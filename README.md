@@ -55,6 +55,10 @@ It is not a task manager, not a notes app, and not an AI assistant.
   that's the whole interaction in the panel (no in-panel review; distractions are
   shared across every window). Open the **new tab page** to see and manage the
   full captured list.
+- **Right-click any editable field on any page** (not just Sid) and choose
+  **Paste from "&lt;project&gt;" notes** to insert one of the focused window's
+  project notes at the cursor — a submenu lists each note, truncated if long.
+  The menu updates itself as you switch windows or edit notes.
 - **Everything autosaves.** Notes, schedule, tasks, distractions, and the project
   name persist as you type, and the window's reopenable tabs (title + URL, in
   order) are **snapshotted automatically** whenever the tabs change — there's no
@@ -88,39 +92,38 @@ All data stays in Chrome local storage. No accounts, no network requests.
 ## New tab page
 
 `newtab.html` **replaces Chrome's new tab page** (`chrome_url_overrides.newtab`).
-Opening a fresh tab shows a full-page view of Sid's **global** surfaces, laid out
-as a centered column for a wide page: today's **day and date** at the top (with a
-line beneath it), then the **schedule** and **tasks** columns side by side (no
-column-header labels, just the lists), a titled **Scratchpad**, and a titled
-**Distractions** section below.
+Opening a fresh tab shows today's **day and date** at the top (with a line
+beneath it), then a **responsive grid of modules** — **Schedule**, **Tasks**,
+**Scratchpad**, **Distractions**, and **Projects** — that sit side by side when
+the window is wide enough, wrapping down to fewer columns (to one, on a narrow
+window) as it narrows.
 
-Schedule and tasks behave exactly as they do in the side panel: single-click a
-line's text to edit it in place, double-click to delete, and drag to reorder
-within its own column (a task's **number doubles as a tick** — click it to mark
-done); the `Schedule…`/`Task…` hints only show on an empty list. The
-**Scratchpad** is a global raw notepad — the same click-anywhere-to-type, hover
-copy/clear model as the side panel's notes, just not tied to any project.
-Distractions are always shown here — no toggle, unlike the panel — with an add
-line and the full captured list beneath it (single-click copies a line,
-double-click deletes).
+All five modules share the **same design and interaction**, so there's one thing
+to learn: a persistent compose line at the bottom of each list — type and press
+**Enter** to add an entry (**Shift+Enter** for a newline; **Backspace** at the
+start of the line pulls the previous entry back in to edit it) — and **click
+anywhere in the module** (a committed line or blank space) to jump the cursor
+into that write-line. Each committed line is plain text; **hover** it to reveal
+**copy** and **clear** buttons. The only difference is **Tasks**, whose lines are
+numbered. **Projects** is the one exception to the shared interaction — instead
+of typing, click an active project's name to **rename** it inline, or use its
+**Archive** button; an archived project shows muted with a **Restore** button.
+Unlike the side panel, nothing here is tied to "the current project" — every row
+names its project explicitly, so you can manage any project from any window.
+**Schedule** and **Tasks** here read/write the same lists as the side panel's
+planner, just displayed plainly (no click-to-edit, drag-reorder, or done-ticking
+on this page — that richer interaction is the side panel's).
 
-Below that, two collapsible admin lists:
-
-- **Projects** — every project, active first then archived. Click an active
-  project's name to **rename** it inline (Enter commits, Esc cancels); its
-  **Archive** button hides it from the sidebar's switcher. An archived project is
-  shown muted with a **Restore** button. Unlike the side panel, nothing here is
-  tied to "the current project" — every row names its project explicitly, so you
-  can manage any project from any window.
-- **Backups** — the dated automatic snapshots (see above). **Restore** asks for
-  confirmation, then replaces the live state with that day's snapshot; every open
-  window (and this page) picks up the change immediately.
+Below the grid, a collapsible **Backups** list (see above): dated automatic
+snapshots, each with a **Restore** button that asks for confirmation, then
+replaces the live state; every open window (and this page) picks up the change
+immediately.
 
 It reads and writes the **same** `chrome.storage.local` state as the side panel
 (via `projects.js` / `storage.js`) and updates live, so edits in one show in the
-other. It's project-agnostic — no project bar, notes, or tabs here (Projects
-manages project records, not a "current" one); the side panel's **new-tab icon**
-(top-right of the global section) also opens one.
+other. It's project-agnostic — no project bar, per-project notes, or tabs here;
+the side panel's **new-tab icon** (top-right of the global section) also opens
+one.
 
 ## Install
 

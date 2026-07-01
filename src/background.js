@@ -3,7 +3,11 @@
 // own — both for a toolbar click and for the _execute_action keyboard shortcut
 // (Ctrl/Cmd+Shift+Period by default) — so this file doesn't need to handle
 // clicks itself. It tracks which windows' panels are open (for the toolbar
-// badge) and reloads the extension on its dev shortcut.
+// badge), maintains the "paste from project notes" right-click menu, and
+// reloads the extension on its dev shortcut.
+
+import * as storage from './storage.js';
+import * as projects from './projects.js';
 
 // Orange dot on the toolbar icon for any window whose side panel isn't open.
 // The panel (ui.js) holds a port open for as long as it's visible; a live port
@@ -38,8 +42,12 @@ async function markAllWindowsUnopened() {
 chrome.runtime.onInstalled.addListener(() => {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
   markAllWindowsUnopened();
+  initFocusedWindow();
 });
-chrome.runtime.onStartup.addListener(markAllWindowsUnopened);
+chrome.runtime.onStartup.addListener(() => {
+  markAllWindowsUnopened();
+  initFocusedWindow();
+});
 chrome.windows.onCreated.addListener((win) => updateBadge(win.id));
 // Keep the badge correct as tabs are switched to or created within a window.
 chrome.tabs.onActivated.addListener(({ windowId }) => updateBadge(windowId));
@@ -57,6 +65,94 @@ chrome.runtime.onConnect.addListener((port) => {
     updateBadge(windowId);
   });
 });
+
+// --- "Paste from project notes" right-click menu ---------------------------
+// A submenu on editable fields listing the focused window's project's notes;
+// picking one inserts that note's text at the cursor of whatever's focused on
+// the right-clicked page. Context menus have no "about to open" hook, so we
+// rebuild it whenever the focused window changes (tracked via
+// windows.onFocusChanged) or that project's notes change.
+const MENU_ROOT = 'sid-paste-note';
+let focusedWindowId = null;
+let menuNotes = []; // the notes currently listed, indexed to match menu ids
+
+async function initFocusedWindow() {
+  try {
+    const win = await chrome.windows.getLastFocused();
+    focusedWindowId = win && win.id != null ? win.id : null;
+  } catch {
+    focusedWindowId = null;
+  }
+  rebuildContextMenu().catch(() => {});
+}
+
+async function rebuildContextMenu() {
+  const state = projects.normaliseState(await storage.load());
+  const project = focusedWindowId != null ? projects.windowProject(state, String(focusedWindowId)) : null;
+  menuNotes = project ? projects.getProject(state, project).notes || [] : [];
+
+  await chrome.contextMenus.removeAll();
+  chrome.contextMenus.create({
+    id: MENU_ROOT,
+    title: project ? `Paste from "${project}" notes` : 'Paste from project notes',
+    contexts: ['editable']
+  });
+  if (!menuNotes.length) {
+    chrome.contextMenus.create({
+      id: `${MENU_ROOT}-empty`,
+      parentId: MENU_ROOT,
+      title: project ? 'No notes yet' : 'No project for this window',
+      enabled: false,
+      contexts: ['editable']
+    });
+  } else {
+    menuNotes.forEach((text, i) => {
+      chrome.contextMenus.create({
+        id: `${MENU_ROOT}-${i}`,
+        parentId: MENU_ROOT,
+        title: text.length > 60 ? `${text.slice(0, 57)}...` : text,
+        contexts: ['editable']
+      });
+    });
+  }
+}
+
+chrome.windows.onFocusChanged.addListener((windowId) => {
+  if (windowId === chrome.windows.WINDOW_ID_NONE) return; // focus left Chrome; keep the last window
+  focusedWindowId = windowId;
+  rebuildContextMenu().catch(() => {});
+});
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes['sid.v1']) rebuildContextMenu().catch(() => {});
+});
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  const id = String(info.menuItemId);
+  if (!id.startsWith(`${MENU_ROOT}-`)) return;
+  const index = Number(id.slice(MENU_ROOT.length + 1));
+  const text = menuNotes[index];
+  if (Number.isNaN(index) || text == null || !tab || tab.id == null) return;
+  chrome.scripting
+    .executeScript({ target: { tabId: tab.id }, func: insertAtCursor, args: [text] })
+    .catch((error) => console.error('Paste note failed', error));
+});
+
+// Runs inside the right-clicked page (not the extension): insert text at the
+// focused element's cursor, for plain inputs/textareas and contenteditable.
+function insertAtCursor(text) {
+  const el = document.activeElement;
+  if (!el) return;
+  if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+    const start = el.selectionStart ?? el.value.length;
+    const end = el.selectionEnd ?? el.value.length;
+    el.value = el.value.slice(0, start) + text + el.value.slice(end);
+    el.selectionStart = el.selectionEnd = start + text.length;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  } else if (el.isContentEditable) {
+    document.execCommand('insertText', false, text);
+  }
+}
 
 // Dev convenience: a shortcut (Ctrl/Cmd+Shift+U) reloads the extension, which
 // re-reads the files from disk for an unpacked install — no trip to
