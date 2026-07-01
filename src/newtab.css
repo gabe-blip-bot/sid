@@ -8,17 +8,13 @@
   padding: 72px 24px 96px;
   display: flex;
   flex-direction: column;
-  gap: 40px;
   font-size: 14px;
 }
 
-/* Header: day + date on the left, the editable theme on the right */
+/* Header: just today's day + date, with a line marking off the planner below */
 .nt-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
   padding-bottom: 14px;
+  margin-bottom: 16px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -28,34 +24,17 @@
   white-space: nowrap;
 }
 
-.nt-theme {
-  flex: 1;
-  min-width: 0;
-  max-width: 340px;
-  height: auto;
-  padding: 0;
-  font-size: 15px;
-  font-weight: 600;
-  text-align: right;
-  color: var(--muted);
-}
-
-/* Section labels above each list */
-.nt-col-label {
-  height: auto;
-  margin-bottom: 8px;
-  padding: 0;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-/* Planner: two equal columns read well centered on a wide page */
+/* Planner: two equal columns read well centered on a wide page. The theme sits
+   directly above the task list (no header on the schedule side). */
 .nt-planner {
   grid-template-columns: 1fr 1fr;
   gap: 40px;
+  margin-bottom: 40px;
+}
+
+.nt-planner .day-theme {
+  margin-bottom: 4px;
+  font-size: 15px;
 }
 
 /* Distractions: drop the panel's divider context; it's its own block here */

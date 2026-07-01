@@ -21,14 +21,11 @@ const els = {
   taskList: document.getElementById('taskList'),
   taskInput: document.getElementById('taskInput'),
   distractionInput: document.getElementById('distractionInput'),
-  distractionToggle: document.getElementById('distractionToggle'),
-  distractionCount: document.getElementById('distractionCount'),
   distractionList: document.getElementById('distractionList')
 };
 
 let state = projects.emptyState();
 let saveTimer = null;
-let distractionsOpen = true; // auto-expanded on this full page (unlike the panel)
 let editingTile = null; // { key, index } of the planner line being edited, or null
 let dragSource = null; // { key, index } of the schedule line being dragged, or null
 
@@ -64,7 +61,7 @@ function bindEvents() {
   });
   els.taskInput.addEventListener('keydown', (e) => addOnEnter(e, els.taskInput, 'tasks'));
 
-  // Distractions: capture-and-hide; the chevron expands the review list.
+  // Distractions: always shown on this full page (no toggle) — Enter adds.
   els.distractionInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -75,10 +72,6 @@ function bindEvents() {
         renderDistractions();
       }
     }
-  });
-  els.distractionToggle.addEventListener('click', () => {
-    distractionsOpen = !distractionsOpen;
-    renderDistractions();
   });
 }
 
@@ -270,26 +263,15 @@ function attachTileDrag(li, key, index) {
   });
 }
 
+// Always visible on this full page — no toggle, just an add line and the list.
 function renderDistractions() {
   const items = state.distractions || [];
-  const has = items.length > 0;
-  if (!has) distractionsOpen = false;
+  els.distractionInput.placeholder = items.length ? '' : 'Distractions…';
 
-  els.distractionToggle.hidden = !has;
-  els.distractionCount.textContent = String(items.length);
-  els.distractionToggle.classList.toggle('is-open', distractionsOpen);
-  els.distractionToggle.setAttribute('aria-expanded', String(distractionsOpen));
-  const label = distractionsOpen ? 'Hide distractions' : 'Show distractions';
-  els.distractionToggle.title = label;
-  els.distractionToggle.setAttribute('aria-label', label);
-
-  els.distractionList.hidden = !(has && distractionsOpen);
   els.distractionList.innerHTML = '';
-  if (els.distractionList.hidden) return;
-
   items.forEach((text, i) => {
     const li = document.createElement('li');
-    li.className = 'note-item';
+    li.className = 'planner-item';
     li.textContent = text;
     li.title = 'Click to copy, double-click to delete';
 

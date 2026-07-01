@@ -37,10 +37,7 @@ const els = {
   removedSection: document.getElementById('removedSection'),
   removedSummary: document.getElementById('removedSummary'),
   removedList: document.getElementById('removedList'),
-  distractionInput: document.getElementById('distractionInput'),
-  distractionToggle: document.getElementById('distractionToggle'),
-  distractionCount: document.getElementById('distractionCount'),
-  distractionList: document.getElementById('distractionList')
+  distractionInput: document.getElementById('distractionInput')
 };
 
 let state = projects.emptyState();
@@ -49,7 +46,6 @@ let currentProject = null;
 let saveTimer = null;
 let workspaceTimer = null; // debounce for auto-capturing the tab snapshot
 
-let distractionsOpen = false; // whether the distractions review list is expanded
 let themeEditing = false; // true once the theme field has snapshotted this focus
 let editingTile = null; // { key, index } of the planner line being edited, or null
 let dragSource = null; // { key, index } of the schedule line being dragged, or null
@@ -158,8 +154,8 @@ function bindEvents() {
     scheduleSave();
   });
 
-  // Distractions: capture-and-hide. Enter adds and clears; the list stays
-  // collapsed, but the summary count bumps to confirm the capture landed.
+  // Distractions: capture-and-hide, no in-panel review (see the new-tab page for
+  // the full list). Enter adds and clears the line.
   els.distractionInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -168,14 +164,8 @@ function bindEvents() {
         projects.addDistraction(state, els.distractionInput.value);
         els.distractionInput.value = '';
         scheduleSave();
-        renderDistractions();
       }
     }
-  });
-  // The chevron expands/collapses the captured-distractions list.
-  els.distractionToggle.addEventListener('click', () => {
-    distractionsOpen = !distractionsOpen;
-    renderDistractions();
   });
 
   // Planner: schedule (left, plain editable) + numbered tasks (right). Enter adds;
@@ -547,7 +537,6 @@ function renderAll() {
   renderNotes();
   renderDayHeader();
   renderPlanner();
-  renderDistractions();
   renderRemoved();
 }
 
@@ -839,62 +828,6 @@ function renderRemoved() {
     item.append(meta, restore);
     els.removedList.appendChild(item);
   }
-}
-
-// --- Distractions (global capture-and-hide list) ---------------------------
-
-// One module: the input captures; a count + chevron on the right appears once
-// something is captured and expands the review list. Each row is plain text —
-// single-click copies, double-click deletes.
-function renderDistractions() {
-  const items = state.distractions || [];
-  const has = items.length > 0;
-  if (!has) distractionsOpen = false; // nothing to show, so stay collapsed
-
-  els.distractionToggle.hidden = !has;
-  els.distractionCount.textContent = String(items.length);
-  els.distractionToggle.classList.toggle('is-open', distractionsOpen);
-  els.distractionToggle.setAttribute('aria-expanded', String(distractionsOpen));
-  const label = distractionsOpen ? 'Hide distractions' : 'Show distractions';
-  els.distractionToggle.title = label;
-  els.distractionToggle.setAttribute('aria-label', label);
-
-  els.distractionList.hidden = !(has && distractionsOpen);
-  els.distractionList.innerHTML = '';
-  if (els.distractionList.hidden) return;
-
-  items.forEach((text, i) => {
-    const li = document.createElement('li');
-    li.className = 'note-item';
-    li.textContent = text;
-    li.title = 'Click to copy, double-click to delete';
-
-    // Disambiguate single (copy) from double (delete) with a short timer.
-    let clickTimer = null;
-    li.addEventListener('click', () => {
-      if (clickTimer) return; // second click handled by dblclick
-      clickTimer = setTimeout(() => {
-        clickTimer = null;
-        copyText(text, li);
-      }, CLICK_DELAY);
-    });
-    li.addEventListener('dblclick', () => {
-      if (clickTimer) {
-        clearTimeout(clickTimer);
-        clickTimer = null;
-      }
-      deleteDistraction(i);
-    });
-
-    els.distractionList.appendChild(li);
-  });
-}
-
-function deleteDistraction(index) {
-  pushUndo();
-  projects.removeDistraction(state, index);
-  scheduleSave();
-  renderDistractions();
 }
 
 // --- Undo ------------------------------------------------------------------
