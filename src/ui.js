@@ -15,16 +15,12 @@ const ICON_COPY = `${SVG_OPEN}<path d="M9 9h11v11H9z"/><path d="M5 15H4V4h11v1"/
 const ICON_CLEAR = `${SVG_OPEN}<path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
 
 const els = {
-  comboWrap: document.getElementById('comboWrap'),
   projectInput: document.getElementById('projectInput'),
   projectListbox: document.getElementById('projectListbox'),
-  renameInput: document.getElementById('renameInput'),
   undoButton: document.getElementById('undoButton'),
   newtabLink: document.getElementById('newtabLink'),
   copyAllButton: document.getElementById('copyAllButton'),
   completeAllButton: document.getElementById('completeAllButton'),
-  renameButton: document.getElementById('renameButton'),
-  archiveButton: document.getElementById('archiveButton'),
   noteList: document.getElementById('noteList'),
   noteComposeItem: document.getElementById('noteComposeItem'),
   noteComposeRow: document.getElementById('noteComposeRow'),
@@ -126,13 +122,11 @@ function bindEvents() {
 
   els.undoButton.addEventListener('click', undo);
   // Now the actual Chrome new-tab page, so opening a fresh tab is enough.
+  // Renaming and archiving live there too (see newtab.js) — the sidebar is
+  // just the project switcher.
   els.newtabLink.addEventListener('click', () => {
     chrome.tabs.create({});
   });
-  els.renameButton.addEventListener('click', enterRename);
-  els.renameInput.addEventListener('keydown', onRenameKey);
-  els.renameInput.addEventListener('blur', exitRename);
-  els.archiveButton.addEventListener('click', archiveCurrent);
 
   // Note compose row works like a text editor: Enter commits (Shift+Enter newline),
   // and Backspace at the very start merges the previous bullet back in to edit it.
@@ -352,57 +346,6 @@ function activeProject() {
     renderAll();
   }
   return projects.ensureProject(state, currentProject);
-}
-
-// --- Inline rename ---------------------------------------------------------
-
-function enterRename() {
-  if (!currentProject) return;
-  closeCombo();
-  els.comboWrap.hidden = true;
-  els.renameInput.hidden = false;
-  els.renameInput.value = currentProject || '';
-  els.renameInput.focus();
-  els.renameInput.select();
-}
-
-function exitRename() {
-  els.renameInput.hidden = true;
-  els.comboWrap.hidden = false;
-  renderProjectInput();
-}
-
-function onRenameKey(event) {
-  if (event.key === 'Enter') {
-    event.preventDefault();
-    commitRename();
-  } else if (event.key === 'Escape') {
-    event.preventDefault();
-    exitRename();
-  }
-}
-
-function commitRename() {
-  const clean = projects.normaliseName(els.renameInput.value);
-  if (clean && currentProject) {
-    // renameProject switches to an existing name rather than merging.
-    currentProject = projects.renameProject(state, currentProject, clean);
-    ensureCurrentActive();
-    projects.attachWindow(state, windowId, currentProject);
-    scheduleSave();
-  }
-  exitRename();
-  renderAll();
-}
-
-// --- Archive ---------------------------------------------------------------
-
-async function archiveCurrent() {
-  if (!currentProject) return;
-  projects.archiveProject(state, currentProject);
-  currentProject = projects.windowProject(state, windowId);
-  await storage.save(state);
-  renderAll();
 }
 
 // --- Notes (per-project item list) -----------------------------------------
@@ -723,8 +666,6 @@ function renderDayHeader() {
 
 function renderProjectInput() {
   const bound = currentProject !== null;
-  els.renameButton.disabled = !bound;
-  els.archiveButton.disabled = !bound;
   els.projectInput.placeholder = bound ? 'Project' : 'Pick or create a project';
   // Don't clobber what the user is typing into the open combobox.
   if (comboOpen && document.activeElement === els.projectInput) return;

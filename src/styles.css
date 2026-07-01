@@ -94,12 +94,17 @@ body {
   color: var(--text);
 }
 
+/* No min-height override here: the default (content-based) minimum keeps this
+   from ever being squeezed shorter than its content — long notes or a long
+   task list grow the panel and the whole .app scrolls, instead of the content
+   clipping or overlapping .chrome-panel below it. flex:1 still lets it fill
+   the available height (so Removed Tabs' margin-top:auto can pin it down)
+   when content is short. */
 .window-panel {
   display: flex;
   flex-direction: column;
   gap: 12px;
   flex: 1;
-  min-height: 0;
 }
 
 .topbar {
@@ -124,6 +129,7 @@ body {
 .project {
   font-weight: 700;
   font-size: 15px;
+  padding-right: 18px; /* room for the chevron so long names don't run under it */
 }
 
 .input::placeholder {
@@ -149,20 +155,11 @@ body {
   color: var(--muted);
 }
 
-/* Project bar: combobox + rename/archive icons */
+/* Project bar: the switcher combobox + note-action icons */
 .project-bar {
   display: flex;
   align-items: center;
   gap: 6px;
-}
-
-/* Vertical divider between the project-action and note-action icon groups */
-.bar-divider {
-  flex: none;
-  width: 1px;
-  height: 20px;
-  margin: 0 2px;
-  background: var(--border);
 }
 
 .combobox {
@@ -171,9 +168,14 @@ body {
   min-width: 0;
 }
 
-.rename-input {
-  flex: 1;
-  min-width: 0;
+/* A visible chevron makes the plain project text read as a dropdown. */
+.combo-chevron {
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
 }
 
 .icon-button {
@@ -473,6 +475,28 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Reused on the new-tab Projects list: an active project name is click-to-
+   rename; an archived one is just muted (its action is Restore instead). */
+.removed-title.editable {
+  cursor: pointer;
+}
+
+.removed-title.is-archived {
+  color: var(--muted);
+}
+
+/* Inline rename field, standing in for a project's title while editing */
+.project-rename-edit {
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  outline: none;
 }
 
 .removed-url {

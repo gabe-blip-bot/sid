@@ -14,16 +14,18 @@ It is not a task manager, not a notes app, and not an AI assistant.
   panel in that window.
 - Chrome's side-panel header shows the window's current project — `<project> — Sid`
   (project name first so it survives truncation), or plain `Sid` when the window is
-  unbound. It updates as you switch, rename, or archive the project.
+  unbound. It updates as you switch projects, and if the project is renamed or
+  archived from the new tab page.
 - The panel has two sections: the **per-project (window) section** on top (project
   bar, notes, then removed tabs pinned at its foot) and the **global (chrome)
   section** below (planner, distractions — shared across all windows), set off by a
   light dividing line.
-- The header is a single project combobox: click to see all projects, type to
-  filter, and Enter on a new name creates it. Typing a name that already exists
-  switches to it (never merges). Header icons: **pencil** (rename in place) and
-  **archive** on the left; **undo** (revert the last content change) and
-  **copy-all** / **clear-all** notes on the right.
+- The header is a single project **combobox** (a small chevron marks it as a
+  dropdown): click to see all projects, type to filter, and Enter on a new name
+  creates it. Typing a name that already exists switches to it (never merges).
+  That's all the sidebar does with projects — **renaming and archiving live on
+  the new tab page** instead. Header icons: **undo** (revert the last content
+  change) and **copy-all** / **clear-all** notes.
   The whole panel is styled like a plain written document — no tiles, boxes, or
   list buttons; you type straight onto lines.
 - **Notes** — a raw notepad that behaves like a small text editor. The bottom line
@@ -41,7 +43,7 @@ It is not a task manager, not a notes app, and not an AI assistant.
   cancels, empty removes it), **double-click to delete** it, and **drag to
   reorder** within its own column (task numbers renumber automatically).
 - A link at the **top-right of the global section** opens the full-page
-  ([new tab](#new-tab-page-preview)) view of these global surfaces.
+  ([new tab](#new-tab-page)) view of these global surfaces.
 - **Distractions** — one global quick-capture box at the bottom of the panel.
   Click it, type a distraction, and press Enter; it's saved and the box clears —
   that's the whole interaction in the panel (no in-panel review; distractions are
@@ -56,12 +58,14 @@ It is not a task manager, not a notes app, and not an AI assistant.
   panel shows the **5 most recent**. **Restore** reopens it and clears it from the
   list; a tab that reappears leaves the archive automatically.
 - **Archiving** a project hides it from the switcher and moves its window(s) to
-  another active project; its notes and saved tabs are kept. (Restoring and
-  deleting archived projects will live on a separate surface, not the side
-  panel.)
+  another active project; its notes and saved tabs are kept. Renaming, archiving,
+  and restoring an archived project all happen on the **new tab page's Projects
+  list**, not the side panel.
 - Switching windows switches to that window's project automatically.
-- Notes and scratchpad autosave to Chrome local storage with debounced writes.
-  Saving a project writes immediately.
+- **Backups**: alongside the live data, Sid keeps one automatic snapshot of the
+  whole state per calendar day (last 7 days) in a separate storage key, as a
+  safety net independent of undo (which is in-memory only and resets on reload).
+  Browse and restore them from the **new tab page's Backups list**.
 - **Undo** (header icon) reverts the last content change in either panel — adding
   or deleting a note, schedule/task/distraction line, or reordering a planner
   line — one step at a time. History is per window and not kept across reloads.
@@ -88,10 +92,23 @@ Distractions are always shown here — no toggle, unlike the panel — with an a
 line and the full captured list beneath it (single-click copies a line,
 double-click deletes).
 
+Below that, two collapsible admin lists:
+
+- **Projects** — every project, active first then archived. Click an active
+  project's name to **rename** it inline (Enter commits, Esc cancels); its
+  **Archive** button hides it from the sidebar's switcher. An archived project is
+  shown muted with a **Restore** button. Unlike the side panel, nothing here is
+  tied to "the current project" — every row names its project explicitly, so you
+  can manage any project from any window.
+- **Backups** — the dated automatic snapshots (see above). **Restore** asks for
+  confirmation, then replaces the live state with that day's snapshot; every open
+  window (and this page) picks up the change immediately.
+
 It reads and writes the **same** `chrome.storage.local` state as the side panel
 (via `projects.js` / `storage.js`) and updates live, so edits in one show in the
-other. It's global-only — no project bar, notes, or tabs here; the side panel's
-**new-tab icon** (top-right of the global section) also opens one.
+other. It's project-agnostic — no project bar, notes, or tabs here (Projects
+manages project records, not a "current" one); the side panel's **new-tab icon**
+(top-right of the global section) also opens one.
 
 ## Install
 

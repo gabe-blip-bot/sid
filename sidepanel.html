@@ -11,7 +11,7 @@
       <div class="window-panel">
       <header class="topbar">
         <div class="project-bar">
-          <div class="combobox" id="comboWrap">
+          <div class="combobox">
             <input
               id="projectInput"
               class="input project"
@@ -25,45 +25,13 @@
               placeholder="Project"
               aria-label="Project"
             />
+            <svg class="combo-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
             <ul id="projectListbox" class="listbox" role="listbox" hidden></ul>
           </div>
-          <input
-            id="renameInput"
-            class="input project rename-input"
-            type="text"
-            autocomplete="off"
-            aria-label="Rename project"
-            hidden
-          />
-          <button
-            id="renameButton"
-            class="icon-button"
-            type="button"
-            title="Rename project"
-            aria-label="Rename project"
-          >
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M4 20h4L19 9a2 2 0 0 0-3-3L5 16v4z" />
-              <path d="M14 7l3 3" />
-            </svg>
-          </button>
-          <button
-            id="archiveButton"
-            class="icon-button"
-            type="button"
-            title="Archive project"
-            aria-label="Archive project"
-          >
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="3" y="4" width="18" height="4" rx="1" />
-              <path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8" />
-              <path d="M10 12h4" />
-            </svg>
-          </button>
-
-          <span class="bar-divider" aria-hidden="true"></span>
 
           <button
             id="undoButton"
