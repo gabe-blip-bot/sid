@@ -1,20 +1,20 @@
-/* New tab page: the global surfaces in a centered, full-page column. Reuses the
-   tokens and plain-text list styles from styles.css; this file only handles the
-   wide-page layout and a few overrides of the panel's narrow context. */
+/* New tab page: the global surfaces as a responsive grid of uniform modules.
+   Reuses the tokens and plain-text list styles from styles.css; this file
+   handles the wide-page layout and the module card treatment. */
 
 .newtab {
-  max-width: 620px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 72px 24px 96px;
+  padding: 48px 32px 96px;
   display: flex;
   flex-direction: column;
   font-size: 14px;
 }
 
-/* Header: just today's day + date, with a line marking off the planner below */
+/* Header: just today's day + date, with a line marking off the grid below */
 .nt-header {
   padding-bottom: 14px;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -24,36 +24,25 @@
   white-space: nowrap;
 }
 
-/* Planner: two equal columns read well centered on a wide page */
-.nt-planner {
-  grid-template-columns: 1fr 1fr;
-  gap: 40px;
-  margin-bottom: 40px;
-}
-
-/* Scratchpad: a global raw notepad, same look as the panel's notes */
-.nt-scratchpad {
+/* Schedule, Tasks, Scratchpad, Distractions, Projects: same module card, side
+   by side when there's room, wrapping to fewer columns (down to one) as the
+   window narrows. */
+.nt-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  align-items: start;
   margin-bottom: 24px;
 }
 
-/* Distractions: drop the panel's divider context; it's its own block here */
-.nt-distractions {
-  border-top: none;
-  padding-top: 0;
-  margin-bottom: 24px;
+.nt-module {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
 }
 
-/* Projects / Backups: reuse the sidebar's quiet ".removed" disclosure look,
-   just spaced out for this page instead of pinned to a flex column's bottom. */
-.nt-util {
-  margin-top: 0;
-}
-
-.nt-util + .nt-util {
-  margin-top: 24px;
-}
-
-/* Section title above the distractions box */
+/* Section title above a module's list */
 .nt-col-label {
   margin-bottom: 8px;
   color: var(--muted);
@@ -61,4 +50,9 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+/* Backups: outside the module grid, the sidebar's quiet ".removed" look */
+.nt-util {
+  margin-top: 0;
 }

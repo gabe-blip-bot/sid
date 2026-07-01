@@ -1,12 +1,15 @@
 {
   "manifest_version": 3,
   "name": "Sidebar Sid",
-  "version": "1.59.0",
+  "version": "1.60.0",
   "description": "A lightweight browser context layer. Answer: what was I working on?",
   "permissions": [
     "sidePanel",
     "storage",
-    "tabs"
+    "tabs",
+    "contextMenus",
+    "scripting",
+    "activeTab"
   ],
   "action": {
     "default_title": "Open Sidebar Sid"
@@ -28,7 +31,8 @@
     }
   },
   "background": {
-    "service_worker": "src/background.js"
+    "service_worker": "src/background.js",
+    "type": "module"
   },
   "side_panel": {
     "default_path": "sidepanel.html"

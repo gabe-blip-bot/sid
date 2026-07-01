@@ -13,63 +13,72 @@
         <div id="dayDate" class="nt-day" aria-label="Today"></div>
       </header>
 
-      <section class="planner nt-planner">
-        <div class="planner-col">
-          <ul id="scheduleList" class="tile-list"></ul>
-          <input
-            id="scheduleInput"
-            class="tile-input"
-            type="text"
-            placeholder="Schedule&hellip;"
-            autocomplete="off"
-            aria-label="Add to schedule"
-          />
-        </div>
-        <div class="planner-col">
-          <ul id="taskList" class="tile-list"></ul>
-          <input
-            id="taskInput"
-            class="tile-input"
-            type="text"
-            placeholder="Task&hellip;"
-            autocomplete="off"
-            aria-label="Add a task"
-          />
-        </div>
-      </section>
+      <div class="nt-grid">
+        <section id="scheduleSection" class="notes nt-module">
+          <div class="nt-col-label">Schedule</div>
+          <ul id="scheduleList" class="note-list">
+            <li id="scheduleComposeItem" class="note-compose-item">
+              <textarea
+                id="scheduleComposeRow"
+                class="note-composer"
+                rows="1"
+                placeholder="Schedule&hellip;"
+                aria-label="Add to schedule"
+              ></textarea>
+            </li>
+          </ul>
+        </section>
 
-      <section id="scratchpadSection" class="notes nt-scratchpad">
-        <div class="nt-col-label">Scratchpad</div>
-        <ul id="scratchpadList" class="note-list">
-          <li id="scratchpadComposeItem" class="note-compose-item">
-            <textarea
-              id="scratchpadComposeRow"
-              class="note-composer"
-              rows="1"
-              placeholder="Notes&hellip;"
-              aria-label="Scratchpad"
-            ></textarea>
-          </li>
-        </ul>
-      </section>
+        <section id="taskSection" class="notes nt-module">
+          <div class="nt-col-label">Tasks</div>
+          <ul id="taskList" class="note-list">
+            <li id="taskComposeItem" class="note-compose-item">
+              <textarea
+                id="taskComposeRow"
+                class="note-composer"
+                rows="1"
+                placeholder="Task&hellip;"
+                aria-label="Add a task"
+              ></textarea>
+            </li>
+          </ul>
+        </section>
 
-      <section class="distractions nt-distractions">
-        <div class="nt-col-label">Distractions</div>
-        <input
-          id="distractionInput"
-          class="distraction-box"
-          type="text"
-          placeholder="Distractions&hellip;"
-          autocomplete="off"
-          aria-label="Add a distraction"
-        />
-        <ul id="distractionList" class="distraction-list"></ul>
-      </section>
+        <section id="scratchpadSection" class="notes nt-module">
+          <div class="nt-col-label">Scratchpad</div>
+          <ul id="scratchpadList" class="note-list">
+            <li id="scratchpadComposeItem" class="note-compose-item">
+              <textarea
+                id="scratchpadComposeRow"
+                class="note-composer"
+                rows="1"
+                placeholder="Notes&hellip;"
+                aria-label="Scratchpad"
+              ></textarea>
+            </li>
+          </ul>
+        </section>
 
-      <details id="projectsSection" class="removed nt-util" hidden>
-        <summary id="projectsSummary">Projects</summary>
-        <ul id="projectsList" class="removed-list"></ul>
-      </details>
+        <section id="distractionSection" class="notes nt-module">
+          <div class="nt-col-label">Distractions</div>
+          <ul id="distractionList" class="note-list">
+            <li id="distractionComposeItem" class="note-compose-item">
+              <textarea
+                id="distractionComposeRow"
+                class="note-composer"
+                rows="1"
+                placeholder="Distractions&hellip;"
+                aria-label="Add a distraction"
+              ></textarea>
+            </li>
+          </ul>
+        </section>
+
+        <section id="projectsSection" class="notes nt-module" hidden>
+          <div class="nt-col-label" id="projectsSummary">Projects</div>
+          <ul id="projectsList" class="removed-list"></ul>
+        </section>
+      </div>
 
       <details id="backupsSection" class="removed nt-util" hidden>
         <summary id="backupsSummary">Backups</summary>
