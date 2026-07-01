@@ -80,8 +80,13 @@ All data stays in Chrome local storage. No accounts, no network requests.
 
 `newtab.html` **replaces Chrome's new tab page** (`chrome_url_overrides.newtab`).
 Opening a fresh tab shows a full-page view of Sid's **global** surfaces — the
-day/date + theme header, the schedule and task lists, and distractions — laid out
-as a centered column for a wide page. It reads and writes the **same**
+day/date + theme header, the schedule and task lists (no column headers, just the
+lists), and distractions — laid out as a centered column for a wide page. Schedule
+and tasks behave exactly as they do in the side panel: single-click a line to edit
+it in place, double-click to delete, schedule lines drag to reorder, and the
+`Schedule…`/`Task…` hints only show on an empty list. Distractions start
+**expanded** here (rather than collapsed, as in the narrow panel) since there's
+room to show them by default. It reads and writes the **same**
 `chrome.storage.local` state as the side panel (via `projects.js` / `storage.js`)
 and updates live, so edits in one show in the other. It's global-only — no project
 bar, notes, or tabs here; the side panel's **new-tab icon** (top-right of the

@@ -28,7 +28,9 @@ const els = {
 
 let state = projects.emptyState();
 let saveTimer = null;
-let distractionsOpen = false; // whether the captured-distractions list is expanded
+let distractionsOpen = true; // auto-expanded on this full page (unlike the panel)
+let editingTile = null; // { key, index } of the planner line being edited, or null
+let dragSource = null; // { key, index } of the schedule line being dragged, or null
 
 init().catch((error) => console.error(error));
 
@@ -51,8 +53,15 @@ function bindEvents() {
     scheduleSave();
   });
 
-  // Schedule + tasks: type on the trailing line, Enter adds.
-  els.scheduleInput.addEventListener('keydown', (e) => addOnEnter(e, els.scheduleInput, 'schedule'));
+  // Schedule + tasks: type on the trailing line, Enter adds. On the schedule
+  // line, Backspace at the start pulls the previous item back to edit.
+  els.scheduleInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' && atStart(els.scheduleInput)) {
+      pullBackListItem(e, els.scheduleInput, 'schedule');
+    } else {
+      addOnEnter(e, els.scheduleInput, 'schedule');
+    }
+  });
   els.taskInput.addEventListener('keydown', (e) => addOnEnter(e, els.taskInput, 'tasks'));
 
   // Distractions: capture-and-hide; the chevron expands the review list.
@@ -101,67 +110,164 @@ function addOnEnter(event, input, key) {
   renderPlanner();
 }
 
-function renderPlanner() {
-  renderColumn(els.scheduleList, state.schedule || [], 'schedule');
-  renderColumn(els.taskList, state.tasks || [], 'tasks');
+// Backspace at the start of a planner add-line pulls the previous item back into
+// the line to edit it (text + the line's text), caret at the join.
+function pullBackListItem(event, input, key) {
+  const items = state[key] || [];
+  if (!items.length) return;
+  event.preventDefault();
+  const prev = items[items.length - 1].text;
+  projects.removeFromList(state, key, items.length - 1);
+  input.value = prev + input.value;
+  scheduleSave();
+  renderPlanner();
+  input.focus();
+  input.setSelectionRange(prev.length, prev.length);
 }
 
-// Schedule: single-click copies. Tasks: single-click toggles done (in place).
-// Both: double-click deletes.
-function renderColumn(listEl, items, key) {
+// True when the caret sits at the very start of a field, with no selection.
+function atStart(field) {
+  return field.selectionStart === 0 && field.selectionEnd === 0;
+}
+
+// Planner: schedule (left, plain) and tasks (right, numbered) — same behaviour as
+// the side panel. Single-click a line edits it in place, double-click deletes;
+// schedule lines drag to reorder.
+function renderPlanner() {
+  const schedule = state.schedule || [];
+  const tasks = state.tasks || [];
+  // Only hint on an empty column; once there are entries the add-line is blank.
+  els.scheduleInput.placeholder = schedule.length ? '' : 'Schedule…';
+  els.taskInput.placeholder = tasks.length ? '' : 'Task…';
+  renderTileColumn(els.scheduleList, schedule, 'schedule');
+  renderTileColumn(els.taskList, tasks, 'tasks');
+}
+
+function renderTileColumn(listEl, items, key) {
   listEl.innerHTML = '';
-  const isTasks = key === 'tasks';
+  const numbered = key === 'tasks';
   items.forEach((item, i) => {
     const li = document.createElement('li');
     li.className = 'planner-item';
-    if (isTasks && item.done) li.classList.add('done');
 
-    if (isTasks) {
+    if (numbered) {
       const num = document.createElement('span');
       num.className = 'planner-num';
       num.textContent = `${i + 1}.`;
       li.appendChild(num);
     }
-    const text = document.createElement('span');
-    text.className = 'planner-text';
-    text.textContent = item.text;
-    li.appendChild(text);
 
-    li.title = isTasks
-      ? 'Click to complete, double-click to delete'
-      : 'Click to copy, double-click to delete';
+    if (editingTile && editingTile.key === key && editingTile.index === i) {
+      const input = document.createElement('input');
+      input.id = 'tileEditInput';
+      input.className = 'tile-edit';
+      input.type = 'text';
+      input.value = item.text;
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          commitTileEdit(key, i, input.value);
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          cancelTileEdit();
+        }
+      });
+      input.addEventListener('blur', () => commitTileEdit(key, i, input.value));
+      li.appendChild(input);
+    } else {
+      const text = document.createElement('span');
+      text.className = 'planner-text';
+      text.textContent = item.text;
+      li.appendChild(text);
+      li.title = 'Click to edit, double-click to delete';
 
-    let clickTimer = null;
-    li.addEventListener('click', () => {
-      if (clickTimer) return; // second click handled by dblclick
-      clickTimer = setTimeout(() => {
-        clickTimer = null;
-        if (isTasks) toggleTask(i);
-        else copyText(item.text, li);
-      }, CLICK_DELAY);
-    });
-    li.addEventListener('dblclick', () => {
-      if (clickTimer) {
-        clearTimeout(clickTimer);
-        clickTimer = null;
-      }
-      removeItem(key, i);
-    });
+      // Disambiguate single (edit) from double (delete) with a short timer.
+      let clickTimer = null;
+      li.addEventListener('click', () => {
+        if (clickTimer) return; // second click handled by dblclick
+        clickTimer = setTimeout(() => {
+          clickTimer = null;
+          startTileEdit(key, i);
+        }, CLICK_DELAY);
+      });
+      li.addEventListener('dblclick', () => {
+        if (clickTimer) {
+          clearTimeout(clickTimer);
+          clickTimer = null;
+        }
+        deleteTile(key, i);
+      });
+
+      if (key === 'schedule') attachTileDrag(li, key, i);
+    }
 
     listEl.appendChild(li);
   });
 }
 
-function toggleTask(index) {
-  projects.toggleListItem(state, 'tasks', index);
+// Click-to-edit: swap the line for an input focused at the end.
+function startTileEdit(key, index) {
+  editingTile = { key, index };
+  renderPlanner();
+  const input = document.getElementById('tileEditInput');
+  if (input) {
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+  }
+}
+
+function commitTileEdit(key, index, value) {
+  if (!editingTile || editingTile.key !== key || editingTile.index !== index) return;
+  editingTile = null;
+  projects.editListItem(state, key, index, value); // empty value removes the line
   scheduleSave();
   renderPlanner();
 }
 
-function removeItem(key, index) {
+function cancelTileEdit() {
+  editingTile = null;
+  renderPlanner();
+}
+
+// Double-click a line to delete it.
+function deleteTile(key, index) {
   projects.removeFromList(state, key, index);
   scheduleSave();
   renderPlanner();
+}
+
+// Drag-and-drop reorder for schedule lines (within the schedule column only).
+function attachTileDrag(li, key, index) {
+  li.draggable = true;
+  li.addEventListener('dragstart', (e) => {
+    dragSource = { key, index };
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+    li.classList.add('dragging');
+  });
+  li.addEventListener('dragend', () => {
+    dragSource = null;
+    li.classList.remove('dragging');
+    Array.from(els.scheduleList.children).forEach((el) => el.classList.remove('drag-over'));
+  });
+  li.addEventListener('dragover', (e) => {
+    if (!dragSource || dragSource.key !== key) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    li.classList.add('drag-over');
+  });
+  li.addEventListener('dragleave', () => li.classList.remove('drag-over'));
+  li.addEventListener('drop', (e) => {
+    if (!dragSource || dragSource.key !== key) return;
+    e.preventDefault();
+    const from = dragSource.index;
+    li.classList.remove('drag-over');
+    if (from !== index) {
+      projects.moveListItem(state, key, from, index);
+      scheduleSave();
+      renderPlanner();
+    }
+  });
 }
 
 function renderDistractions() {
