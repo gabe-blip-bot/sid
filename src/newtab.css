@@ -24,21 +24,25 @@
   white-space: nowrap;
 }
 
-/* Planner: two equal columns read well centered on a wide page. The theme sits
-   directly above the task list (no header on the schedule side). */
+/* Planner: two equal columns read well centered on a wide page */
 .nt-planner {
   grid-template-columns: 1fr 1fr;
   gap: 40px;
   margin-bottom: 40px;
 }
 
-.nt-planner .day-theme {
-  margin-bottom: 4px;
-  font-size: 15px;
-}
-
 /* Distractions: drop the panel's divider context; it's its own block here */
 .nt-distractions {
   border-top: none;
   padding-top: 0;
+}
+
+/* Section title above the distractions box */
+.nt-col-label {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }

@@ -29,7 +29,6 @@ const els = {
   noteComposeItem: document.getElementById('noteComposeItem'),
   noteComposeRow: document.getElementById('noteComposeRow'),
   dayDate: document.getElementById('dayDate'),
-  dayThemeInput: document.getElementById('dayThemeInput'),
   scheduleList: document.getElementById('scheduleList'),
   scheduleInput: document.getElementById('scheduleInput'),
   taskList: document.getElementById('taskList'),
@@ -46,7 +45,6 @@ let currentProject = null;
 let saveTimer = null;
 let workspaceTimer = null; // debounce for auto-capturing the tab snapshot
 
-let themeEditing = false; // true once the theme field has snapshotted this focus
 let editingTile = null; // { key, index } of the planner line being edited, or null
 let dragSource = null; // { key, index } of the schedule line being dragged, or null
 
@@ -66,6 +64,7 @@ init().catch((error) => {
 async function init() {
   const win = await chrome.windows.getCurrent();
   windowId = String(win.id);
+  connectPanelPort(win.id);
 
   state = projects.normaliseState(await storage.load());
 
@@ -105,6 +104,15 @@ async function init() {
   });
 }
 
+// Tell the background service worker this window's panel is open, so it can
+// clear the "not open" toolbar-badge dot. Reconnects if the worker restarts
+// underneath us (a disconnect while the panel itself is still alive); if the
+// panel actually closes, execution stops here and nothing reconnects.
+function connectPanelPort(numericWindowId) {
+  const port = chrome.runtime.connect({ name: `sidepanel:${numericWindowId}` });
+  port.onDisconnect.addListener(() => connectPanelPort(numericWindowId));
+}
+
 function bindEvents() {
   els.projectInput.addEventListener('focus', openCombo);
   els.projectInput.addEventListener('input', () => {
@@ -139,20 +147,6 @@ function bindEvents() {
   });
   els.copyAllButton.addEventListener('click', copyAllNotes);
   els.completeAllButton.addEventListener('click', clearAllNotes);
-
-  // Theme: a single day-agnostic label (above the task column). Snapshot once per
-  // editing session (on focus) so undo reverts the whole edit, not each keystroke.
-  els.dayThemeInput.addEventListener('focus', () => {
-    themeEditing = false;
-  });
-  els.dayThemeInput.addEventListener('input', () => {
-    if (!themeEditing) {
-      pushUndo();
-      themeEditing = true;
-    }
-    projects.setTheme(state, els.dayThemeInput.value);
-    scheduleSave();
-  });
 
   // Distractions: capture-and-hide, no in-panel review (see the new-tab page for
   // the full list). Enter adds and clears the line.
@@ -569,7 +563,8 @@ function pullBackListItem(event, input, key) {
 }
 
 // Planner: schedule (left, plain) and tasks (right, numbered). Single-click a
-// line edits it in place, double-click deletes it; schedule lines drag to reorder.
+// line edits it in place, double-click deletes it, and lines can be dragged to
+// reorder within their own column (tasks renumber automatically).
 function renderPlanner() {
   const schedule = state.schedule || [];
   const tasks = state.tasks || [];
@@ -635,11 +630,17 @@ function renderTileColumn(listEl, items, key) {
         deleteTile(key, i);
       });
 
-      if (key === 'schedule') attachTileDrag(li, key, i);
+      attachTileDrag(li, key, i);
     }
 
     listEl.appendChild(li);
   });
+}
+
+// The list element for a planner column, so drag handlers can clear highlights
+// across the whole column regardless of which line they're attached to.
+function listElFor(key) {
+  return key === 'tasks' ? els.taskList : els.scheduleList;
 }
 
 // Click-to-edit: swap the line for an input focused at the end.
@@ -675,7 +676,8 @@ function deleteTile(key, index) {
   renderPlanner();
 }
 
-// Drag-and-drop reorder for schedule lines (within the schedule column only).
+// Drag-and-drop reorder for planner lines (schedule or tasks, each within its
+// own column only).
 function attachTileDrag(li, key, index) {
   li.draggable = true;
   li.addEventListener('dragstart', (e) => {
@@ -687,7 +689,7 @@ function attachTileDrag(li, key, index) {
   li.addEventListener('dragend', () => {
     dragSource = null;
     li.classList.remove('dragging');
-    Array.from(els.scheduleList.children).forEach((el) => el.classList.remove('drag-over'));
+    Array.from(listElFor(key).children).forEach((el) => el.classList.remove('drag-over'));
   });
   li.addEventListener('dragover', (e) => {
     if (!dragSource || dragSource.key !== key) return;
@@ -710,17 +712,13 @@ function attachTileDrag(li, key, index) {
   });
 }
 
-// The day/date label sits above the schedule; the theme box (above the tasks)
-// edits today's theme.
+// The day/date label sits above the schedule.
 function renderDayHeader() {
   els.dayDate.textContent = new Date().toLocaleDateString(undefined, {
     weekday: 'short',
     day: 'numeric',
     month: 'short'
   });
-  if (document.activeElement !== els.dayThemeInput) {
-    els.dayThemeInput.value = state.theme || '';
-  }
 }
 
 function renderProjectInput() {
@@ -833,7 +831,7 @@ function renderRemoved() {
 // --- Undo ------------------------------------------------------------------
 
 // Snapshot the whole state before a content edit so it can be reverted. Covers
-// both panels (notes, schedule, tasks, theme, distractions).
+// both panels (notes, schedule, tasks, distractions).
 function pushUndo() {
   undoStack.push(JSON.stringify(state));
   if (undoStack.length > UNDO_LIMIT) undoStack.shift();

@@ -70,16 +70,12 @@ body {
   border-top: 1px solid var(--border);
 }
 
-/* Theme header line: the editable theme plus the full-page (new tab) link */
-.theme-row {
+/* Row above the task list, holding just the new-tab link, top-right */
+.newtab-link-row {
+  height: 28px;
   display: flex;
   align-items: center;
-  gap: 6px;
-}
-
-.theme-row .day-theme {
-  flex: 1;
-  min-width: 0;
+  justify-content: flex-end;
 }
 
 .newtab-link {
@@ -334,28 +330,10 @@ body {
   color: var(--text);
 }
 
-/* Theme: a plain header line, no box */
-.day-theme {
-  width: 100%;
-  min-width: 0;
-  height: 28px;
-  padding: 4px 0;
-  border: none;
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-  font-weight: 600;
-  outline: none;
-}
-
-.day-theme::placeholder {
-  color: var(--muted);
-}
-
-/* Planner: two columns of plain text lists (schedule plain | tasks numbered) */
+/* Planner: two equal columns of plain text lists (schedule | numbered tasks) */
 .planner {
   display: grid;
-  grid-template-columns: 1fr 2fr; /* schedule narrower, task/theme wider */
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
   align-items: start;
 }

@@ -1,7 +1,7 @@
 // newtab.js
-// A standalone, full-page view of Sid's GLOBAL surfaces (day/date + theme,
-// schedule, tasks, distractions). It reads and writes the same chrome.storage
-// state as the side panel, so the two stay in sync. No project/notes/tabs here.
+// A standalone, full-page view of Sid's GLOBAL surfaces (day/date, schedule,
+// tasks, distractions). It reads and writes the same chrome.storage state as the
+// side panel, so the two stay in sync. No project/notes/tabs here.
 //
 // Rendering largely mirrors the panel's plain-text model (ui.js). Some logic is
 // duplicated for this first cut; we'll extract a shared module only if it sticks.
@@ -15,7 +15,6 @@ const CLICK_DELAY = 220; // ms to wait for a second click before acting
 
 const els = {
   dayDate: document.getElementById('dayDate'),
-  dayThemeInput: document.getElementById('dayThemeInput'),
   scheduleList: document.getElementById('scheduleList'),
   scheduleInput: document.getElementById('scheduleInput'),
   taskList: document.getElementById('taskList'),
@@ -44,12 +43,6 @@ async function init() {
 }
 
 function bindEvents() {
-  // Theme: a single day-agnostic label, autosaved.
-  els.dayThemeInput.addEventListener('input', () => {
-    projects.setTheme(state, els.dayThemeInput.value);
-    scheduleSave();
-  });
-
   // Schedule + tasks: type on the trailing line, Enter adds. On the schedule
   // line, Backspace at the start pulls the previous item back to edit.
   els.scheduleInput.addEventListener('keydown', (e) => {
@@ -87,9 +80,6 @@ function renderHeader() {
     day: 'numeric',
     month: 'long'
   });
-  if (document.activeElement !== els.dayThemeInput) {
-    els.dayThemeInput.value = state.theme || '';
-  }
 }
 
 // Add an item to a global list on Enter; the input stays as the next empty line.
@@ -124,8 +114,8 @@ function atStart(field) {
 }
 
 // Planner: schedule (left, plain) and tasks (right, numbered) — same behaviour as
-// the side panel. Single-click a line edits it in place, double-click deletes;
-// schedule lines drag to reorder.
+// the side panel. Single-click a line edits it in place, double-click deletes,
+// and lines can be dragged to reorder within their own column.
 function renderPlanner() {
   const schedule = state.schedule || [];
   const tasks = state.tasks || [];
@@ -191,11 +181,17 @@ function renderTileColumn(listEl, items, key) {
         deleteTile(key, i);
       });
 
-      if (key === 'schedule') attachTileDrag(li, key, i);
+      attachTileDrag(li, key, i);
     }
 
     listEl.appendChild(li);
   });
+}
+
+// The list element for a planner column, so drag handlers can clear highlights
+// across the whole column regardless of which line they're attached to.
+function listElFor(key) {
+  return key === 'tasks' ? els.taskList : els.scheduleList;
 }
 
 // Click-to-edit: swap the line for an input focused at the end.
@@ -229,7 +225,8 @@ function deleteTile(key, index) {
   renderPlanner();
 }
 
-// Drag-and-drop reorder for schedule lines (within the schedule column only).
+// Drag-and-drop reorder for planner lines (schedule or tasks, each within its
+// own column only).
 function attachTileDrag(li, key, index) {
   li.draggable = true;
   li.addEventListener('dragstart', (e) => {
@@ -241,7 +238,7 @@ function attachTileDrag(li, key, index) {
   li.addEventListener('dragend', () => {
     dragSource = null;
     li.classList.remove('dragging');
-    Array.from(els.scheduleList.children).forEach((el) => el.classList.remove('drag-over'));
+    Array.from(listElFor(key).children).forEach((el) => el.classList.remove('drag-over'));
   });
   li.addEventListener('dragover', (e) => {
     if (!dragSource || dragSource.key !== key) return;

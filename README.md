@@ -8,10 +8,10 @@ It is not a task manager, not a notes app, and not an AI assistant.
 
 ## How it works
 
-- Each Chrome window is attached to a project. The Sid toolbar icon shows a short
-  badge tag for the focused window's project (initials or first letters), with the
-  full name in the icon's tooltip. (Chrome doesn't let extensions label the tab
-  bar itself, so the badge is the closest always-visible indicator.)
+- Each Chrome window is attached to a project. The Sid toolbar icon shows an
+  **orange dot** for any window whose side panel isn't currently open, so you can
+  tell at a glance which windows have Sid open; it clears the moment you open the
+  panel in that window.
 - Chrome's side-panel header shows the window's current project — `<project> — Sid`
   (project name first so it survives truncation), or plain `Sid` when the window is
   unbound. It updates as you switch, rename, or archive the project.
@@ -35,12 +35,11 @@ It is not a task manager, not a notes app, and not an AI assistant.
   inputs hint with `Notes…`, `Schedule…`, `Task…`, `Distractions…`, hidden once the
   list has entries.
 - **Planner** — two global columns: a plain-text **schedule** (left, no bullets)
-  and a numbered **task** list (right). Above the schedule sits today's **day and
-  date**; above the tasks sits a **theme** line (a short global label, autosaved).
-  Type on a column's bottom line and press Enter to add an entry. On both lists,
-  **single-click a line to edit** it in place (Enter commits, Esc cancels, empty
-  removes it) and **double-click to delete** it. **Schedule** lines can be
-  **dragged to reorder**.
+  and a numbered **task** list (right), with today's **day and date** above the
+  schedule. Type on a column's bottom line and press Enter to add an entry. On
+  both lists, **single-click a line to edit** it in place (Enter commits, Esc
+  cancels, empty removes it), **double-click to delete** it, and **drag to
+  reorder** within its own column (task numbers renumber automatically).
 - A link at the **top-right of the global section** opens the full-page
   ([new tab](#new-tab-page-preview)) view of these global surfaces.
 - **Distractions** — one global quick-capture box at the bottom of the panel.
@@ -48,9 +47,9 @@ It is not a task manager, not a notes app, and not an AI assistant.
   that's the whole interaction in the panel (no in-panel review; distractions are
   shared across every window). Open the **new tab page** to see and manage the
   full captured list.
-- **Everything autosaves.** Notes, schedule, tasks, distractions, theme, and the
-  project name persist as you type, and the window's reopenable tabs (title + URL,
-  in order) are **snapshotted automatically** whenever the tabs change — there's no
+- **Everything autosaves.** Notes, schedule, tasks, distractions, and the project
+  name persist as you type, and the window's reopenable tabs (title + URL, in
+  order) are **snapshotted automatically** whenever the tabs change — there's no
   save button.
 - **Removed Tabs** — when the auto-snapshot no longer contains a previously seen
   tab (you closed it or navigated away), it's archived here (by URL, deduped). The
@@ -64,8 +63,8 @@ It is not a task manager, not a notes app, and not an AI assistant.
 - Notes and scratchpad autosave to Chrome local storage with debounced writes.
   Saving a project writes immediately.
 - **Undo** (header icon) reverts the last content change in either panel — adding
-  or deleting a note, schedule/task/distraction line, completing a task, or a theme
-  edit — one step at a time. History is per window and not kept across reloads.
+  or deleting a note, schedule/task/distraction line, or reordering a planner
+  line — one step at a time. History is per window and not kept across reloads.
 - **Across a Chrome restart**, window IDs are reassigned, so Sid does not try to
   restore window↔project bindings. On startup it prunes bindings for windows
   that no longer exist, and each reopened window comes up **unbound** — prompting
@@ -79,15 +78,15 @@ All data stays in Chrome local storage. No accounts, no network requests.
 `newtab.html` **replaces Chrome's new tab page** (`chrome_url_overrides.newtab`).
 Opening a fresh tab shows a full-page view of Sid's **global** surfaces, laid out
 as a centered column for a wide page: today's **day and date** at the top (with a
-line beneath it), then the **schedule** (left) and **theme + tasks** (right, theme
-directly above the task list) side by side, and **distractions** below. There are
-no column-header labels, just the lists.
+line beneath it), then the **schedule** and **tasks** columns side by side (no
+column-header labels, just the lists), and a titled **Distractions** section below.
 
 Schedule and tasks behave exactly as they do in the side panel: single-click a
-line to edit it in place, double-click to delete, schedule lines drag to reorder,
-and the `Schedule…`/`Task…` hints only show on an empty list. Distractions are
-always shown here — no toggle, unlike the panel — with an add line and the full
-captured list beneath it (single-click copies a line, double-click deletes).
+line to edit it in place, double-click to delete, and drag to reorder within
+their own column; the `Schedule…`/`Task…` hints only show on an empty list.
+Distractions are always shown here — no toggle, unlike the panel — with an add
+line and the full captured list beneath it (single-click copies a line,
+double-click deletes).
 
 It reads and writes the **same** `chrome.storage.local` state as the side panel
 (via `projects.js` / `storage.js`) and updates live, so edits in one show in the

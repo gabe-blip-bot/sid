@@ -12,7 +12,6 @@
 //       }
 //     },
 //     distractions: string[],                  // global quick-capture list
-//     theme:       string,                      // global day-agnostic theme
 //     windows:     { [windowId]: projectName }, // which project each window shows
 //     openWindows: { [projectName]: windowId }  // window hosting a project's workspace
 //   }
@@ -24,8 +23,7 @@ export function emptyState() {
     schedule: [],
     tasks: [],
     windows: {},
-    openWindows: {},
-    theme: ''
+    openWindows: {}
   };
 }
 
@@ -33,13 +31,8 @@ export function emptyState() {
 // and migrate each project's notes to a list of item strings.
 export function normaliseState(loaded) {
   const state = { ...emptyState(), ...(loaded || {}) };
-  // Migrate the old per-day themes into a single day-agnostic theme: take the
-  // first non-empty day if no single theme was saved.
-  if (loaded && typeof loaded.theme !== 'string' && loaded.dayThemes) {
-    const d = loaded.dayThemes;
-    state.theme = d.mon || d.tue || d.wed || d.thu || '';
-  }
-  if (typeof state.theme !== 'string') state.theme = '';
+  // The theme feature was retired; drop any lingering saved values.
+  delete state.theme;
   delete state.dayThemes;
   // Migrate the old global scratchpad string into the distractions list.
   const rawDistractions =
@@ -145,11 +138,6 @@ export function editNote(state, name, index, text) {
 export function clearNotes(state, name) {
   const project = state.projects[name];
   if (project) project.notes = [];
-}
-
-// Set the single global day-agnostic theme.
-export function setTheme(state, text) {
-  state.theme = text;
 }
 
 // --- Distractions (a global quick-capture list) ----------------------------
