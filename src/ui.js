@@ -1,19 +1,33 @@
 // ui.js
 // Wires the side panel DOM to the storage and project modules.
 // Owns the in-memory state, the debounced autosave, and the project combobox.
+//
+// Every editable list (notes, schedule, tasks, distractions) shares one
+// interaction model, driven by the MODULES table below: a persistent compose
+// line at the end adds an entry (Enter commits; Shift+Enter is a newline on
+// the multi-line lists only); a committed line is single-click-to-edit,
+// double-click-to-delete, with copy/delete buttons and (on schedule/tasks) a
+// drag handle revealed on hover. Tasks alone add a leading number that
+// doubles as a done-tick. See newtab.js for the same model applied to the
+// global lists on the full-page view.
 
 import * as storage from './storage.js';
 import * as projects from './projects.js';
 
 const SAVE_DELAY = 400; // ms to debounce autosave writes
 const FLASH_MS = 900; // how long a "Copied" confirmation shows
-const CLICK_DELAY = 220; // ms to wait for a second click before copying
+const CLICK_DELAY = 220; // ms to wait for a second click before starting an edit
 
 const SVG_OPEN =
   '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
 const ICON_COPY = `${SVG_OPEN}<path d="M9 9h11v11H9z"/><path d="M5 15H4V4h11v1"/></svg>`;
 const ICON_CLEAR = `${SVG_OPEN}<path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
 const ICON_TICK = `${SVG_OPEN}<path d="M20 6 9 17l-5-5"/></svg>`;
+const ICON_GRIP =
+  '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true">' +
+  '<circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/>' +
+  '<circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/>' +
+  '<circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
 
 const els = {
   projectInput: document.getElementById('projectInput'),
@@ -22,19 +36,22 @@ const els = {
   newtabLink: document.getElementById('newtabLink'),
   copyAllButton: document.getElementById('copyAllButton'),
   completeAllButton: document.getElementById('completeAllButton'),
-  notesSection: document.getElementById('notesSection'),
   noteList: document.getElementById('noteList'),
   noteComposeItem: document.getElementById('noteComposeItem'),
   noteComposeRow: document.getElementById('noteComposeRow'),
   dayDate: document.getElementById('dayDate'),
   scheduleList: document.getElementById('scheduleList'),
-  scheduleInput: document.getElementById('scheduleInput'),
+  scheduleComposeItem: document.getElementById('scheduleComposeItem'),
+  scheduleComposeRow: document.getElementById('scheduleComposeRow'),
   taskList: document.getElementById('taskList'),
-  taskInput: document.getElementById('taskInput'),
+  taskComposeItem: document.getElementById('taskComposeItem'),
+  taskComposeRow: document.getElementById('taskComposeRow'),
   removedSection: document.getElementById('removedSection'),
   removedSummary: document.getElementById('removedSummary'),
   removedList: document.getElementById('removedList'),
-  distractionInput: document.getElementById('distractionInput')
+  distractionList: document.getElementById('distractionList'),
+  distractionComposeItem: document.getElementById('distractionComposeItem'),
+  distractionComposeRow: document.getElementById('distractionComposeRow')
 };
 
 let state = projects.emptyState();
@@ -43,8 +60,8 @@ let currentProject = null;
 let saveTimer = null;
 let workspaceTimer = null; // debounce for auto-capturing the tab snapshot
 
-let editingTile = null; // { key, index } of the planner line being edited, or null
-let dragSource = null; // { key, index } of the schedule line being dragged, or null
+let editing = null; // { key, index } of the line being edited, or null
+let dragSource = null; // { key, index } of the line being dragged, or null
 
 // Undo: snapshots of state taken before each content edit (this window only).
 const UNDO_LIMIT = 50;
@@ -54,6 +71,70 @@ const undoStack = [];
 let comboOpen = false;
 let comboRows = []; // [{ kind:'project'|'create'|'hint', name?, text? }]
 let highlight = -1; // index into comboRows of the active row
+
+// The four editable lists in the panel, unified: same compose/render/edit/
+// delete/copy behaviour, differing only in where they read and write, whether
+// their compose line is multi-line, and whether they're numbered/reorderable.
+const MODULES = {
+  notes: {
+    key: 'notes',
+    listEl: els.noteList,
+    composeItemEl: els.noteComposeItem,
+    composeRowEl: els.noteComposeRow,
+    placeholder: 'Notes…',
+    disabledPlaceholder: 'Pick a project first',
+    multiline: true,
+    disabled: () => !currentProject,
+    getItems: () => (currentProject ? projects.getProject(state, currentProject).notes || [] : []),
+    getText: (item) => item,
+    add: (text) => projects.addNote(state, currentProject, text),
+    removeAt: (i) => projects.removeNote(state, currentProject, i),
+    editAt: (i, text) => projects.editNote(state, currentProject, i, text)
+  },
+  schedule: {
+    key: 'schedule',
+    listEl: els.scheduleList,
+    composeItemEl: els.scheduleComposeItem,
+    composeRowEl: els.scheduleComposeRow,
+    placeholder: 'Schedule…',
+    reorder: true,
+    getItems: () => state.schedule || [],
+    getText: (item) => item.text,
+    add: (text) => projects.addToList(state, 'schedule', text),
+    removeAt: (i) => projects.removeFromList(state, 'schedule', i),
+    editAt: (i, text) => projects.editListItem(state, 'schedule', i, text),
+    moveAt: (from, to) => projects.moveListItem(state, 'schedule', from, to)
+  },
+  tasks: {
+    key: 'tasks',
+    listEl: els.taskList,
+    composeItemEl: els.taskComposeItem,
+    composeRowEl: els.taskComposeRow,
+    placeholder: 'Task…',
+    numbered: true,
+    reorder: true,
+    getItems: () => state.tasks || [],
+    getText: (item) => item.text,
+    isDone: (item) => item.done,
+    add: (text) => projects.addToList(state, 'tasks', text),
+    removeAt: (i) => projects.removeFromList(state, 'tasks', i),
+    editAt: (i, text) => projects.editListItem(state, 'tasks', i, text),
+    moveAt: (from, to) => projects.moveListItem(state, 'tasks', from, to),
+    toggleAt: (i) => projects.toggleListItem(state, 'tasks', i)
+  },
+  distractions: {
+    key: 'distractions',
+    listEl: els.distractionList,
+    composeItemEl: els.distractionComposeItem,
+    composeRowEl: els.distractionComposeRow,
+    placeholder: 'Distractions…',
+    getItems: () => state.distractions || [],
+    getText: (item) => item,
+    add: (text) => projects.addDistraction(state, text),
+    removeAt: (i) => projects.removeDistraction(state, i),
+    editAt: (i, text) => projects.editDistraction(state, i, text)
+  }
+};
 
 init().catch((error) => {
   console.error(error);
@@ -130,55 +211,10 @@ function bindEvents() {
     chrome.tabs.create({});
   });
 
-  // Note compose row works like a text editor: Enter commits (Shift+Enter newline),
-  // and Backspace at the very start merges the previous bullet back in to edit it.
-  els.noteComposeRow.addEventListener('input', () => autoGrow(els.noteComposeRow));
-  els.noteComposeRow.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      commitCompose();
-    } else if (e.key === 'Backspace' && atStart(els.noteComposeRow)) {
-      pullBackNote(e);
-    }
-  });
   els.copyAllButton.addEventListener('click', copyAllNotes);
   els.completeAllButton.addEventListener('click', clearAllNotes);
-  // Click anywhere in the notes area (a committed line, or blank space) to
-  // start typing, instead of requiring a precise click on the write-line.
-  // Skip it for a per-line button click, and don't steal an active text
-  // selection (so manual copy-by-drag still works).
-  els.notesSection.addEventListener('click', (e) => {
-    if (e.target.closest('.note-line-btn') || e.target === els.noteComposeRow) return;
-    if (window.getSelection().toString()) return;
-    els.noteComposeRow.focus();
-    const len = els.noteComposeRow.value.length;
-    els.noteComposeRow.setSelectionRange(len, len);
-  });
 
-  // Distractions: capture-and-hide, no in-panel review (see the new-tab page for
-  // the full list). Enter adds and clears the line.
-  els.distractionInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (els.distractionInput.value.trim()) {
-        pushUndo();
-        projects.addDistraction(state, els.distractionInput.value);
-        els.distractionInput.value = '';
-        scheduleSave();
-      }
-    }
-  });
-
-  // Planner: schedule (left, plain editable) + numbered tasks (right). Enter adds;
-  // on the schedule line, Backspace at the start pulls the previous item back to edit.
-  els.scheduleInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Backspace' && atStart(els.scheduleInput)) {
-      pullBackListItem(e, els.scheduleInput, 'schedule');
-    } else {
-      addOnEnter(e, els.scheduleInput, 'schedule');
-    }
-  });
-  els.taskInput.addEventListener('keydown', (e) => addOnEnter(e, els.taskInput, 'tasks'));
+  Object.values(MODULES).forEach(bindModule);
 
   bindTabWatch();
 }
@@ -366,62 +402,267 @@ function ensureCurrentActive() {
   if (project && project.archived) projects.restoreProject(state, currentProject);
 }
 
-// Return the current project's record, creating one if somehow absent. Only
-// reached from explicit actions (adding a note, Save) — all disabled while the
-// window is unbound — so it never creates a project from a render.
-function activeProject() {
-  if (!currentProject) {
-    currentProject = projects.newProjectName(state);
-    projects.attachWindow(state, windowId, currentProject);
-    renderAll();
-  }
-  return projects.ensureProject(state, currentProject);
+// --- Editable lists (notes, schedule, tasks, distractions) ------------------
+//
+// One model for all four: a persistent compose line commits new entries on
+// Enter; a committed line is single-click-to-edit, double-click-to-delete,
+// with copy/delete buttons revealed on hover (plus a drag handle for the
+// reorderable lists). See buildRow/bindModule below.
+
+function bindModule(mod) {
+  const row = mod.composeRowEl;
+  if (mod.multiline) row.addEventListener('input', () => autoGrow(row));
+  row.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      commitCompose(mod);
+    } else if (e.key === 'Backspace' && atStart(row)) {
+      pullBack(mod, e);
+    }
+  });
+
+  // Click anywhere in the list's blank space (not an existing line, or the
+  // compose row itself) to jump the cursor into the write-line. Don't steal
+  // an active text selection (so manual copy-by-drag still works).
+  mod.listEl.addEventListener('click', (e) => {
+    if (e.target.closest('.note-item') || e.target === row) return;
+    if (window.getSelection().toString()) return;
+    row.focus();
+    const len = row.value.length;
+    row.setSelectionRange(len, len);
+  });
 }
 
-// --- Notes (per-project item list) -----------------------------------------
-
-// Commit the compose row as a new note; keep focus so the next line is ready.
-function commitCompose() {
-  if (!els.noteComposeRow.value.trim() || !currentProject) return;
+// Commit the compose row as a new entry; keep focus so the next line is ready.
+function commitCompose(mod) {
+  if (mod.disabled && mod.disabled()) return;
+  const row = mod.composeRowEl;
+  if (!row.value.trim()) return;
   pushUndo();
-  projects.addNote(state, currentProject, els.noteComposeRow.value);
-  els.noteComposeRow.value = '';
-  autoGrow(els.noteComposeRow);
+  mod.add(row.value);
+  row.value = '';
+  if (mod.multiline) autoGrow(row);
   scheduleSave();
-  renderNotes(); // rebuilds committed rows only; the compose row keeps focus
+  renderModule(mod);
 }
 
-// Double-click a note to delete it.
-function deleteNote(index) {
-  pushUndo();
-  projects.removeNote(state, currentProject, index);
-  scheduleSave();
-  renderNotes();
-}
-
-// Backspace at the start of the compose line merges the previous bullet back in
+// Backspace at the start of the compose line merges the previous line back in
 // (its text + the compose text), caret at the join — like a text editor.
-function pullBackNote(event) {
-  if (!currentProject) return;
-  const notes = projects.getProject(state, currentProject).notes || [];
-  if (!notes.length) return;
+function pullBack(mod, event) {
+  const items = mod.getItems();
+  if (!items.length) return;
   event.preventDefault();
   pushUndo();
-  const prev = notes[notes.length - 1];
-  projects.removeNote(state, currentProject, notes.length - 1);
-  const combined = prev + els.noteComposeRow.value;
+  const row = mod.composeRowEl;
+  const prev = mod.getText(items[items.length - 1]);
+  mod.removeAt(items.length - 1);
+  const combined = prev + row.value;
   scheduleSave();
-  renderNotes();
-  els.noteComposeRow.value = combined;
-  autoGrow(els.noteComposeRow);
-  els.noteComposeRow.focus();
-  els.noteComposeRow.setSelectionRange(prev.length, prev.length);
+  renderModule(mod);
+  row.value = combined;
+  if (mod.multiline) autoGrow(row);
+  row.focus();
+  row.setSelectionRange(prev.length, prev.length);
+}
+
+// Rebuild only the committed rows; the compose row at the end is persistent so
+// in-progress text and focus survive a re-render.
+function renderModule(mod) {
+  const items = mod.getItems();
+  const disabled = mod.disabled ? mod.disabled() : false;
+  mod.composeRowEl.disabled = disabled;
+  mod.composeRowEl.placeholder = disabled
+    ? mod.disabledPlaceholder || ''
+    : items.length
+      ? ''
+      : mod.placeholder;
+
+  mod.listEl.querySelectorAll('.note-item').forEach((el) => el.remove());
+  items.forEach((item, i) => {
+    mod.listEl.insertBefore(buildRow(mod, item, i), mod.composeItemEl);
+  });
+
+  if (mod.key === 'notes') {
+    els.copyAllButton.disabled = !items.length;
+    els.completeAllButton.disabled = !items.length;
+  }
+}
+
+// Build one committed line: an inline edit field while it's being edited, or
+// plain text with hover copy/delete buttons (and, for reorderable lists, a
+// hover drag handle) otherwise.
+function buildRow(mod, item, index) {
+  const li = document.createElement('li');
+  li.className = 'note-item';
+  const text = mod.getText(item);
+  const done = mod.numbered && mod.isDone(item);
+  if (done) li.classList.add('done');
+
+  if (mod.reorder) li.appendChild(buildDragHandle(li, mod, index));
+
+  if (mod.numbered) {
+    const num = document.createElement('span');
+    num.className = 'note-num';
+    num.title = done ? 'Mark not done' : 'Mark done';
+    if (done) num.innerHTML = ICON_TICK;
+    else num.textContent = `${index + 1}.`;
+    num.addEventListener('click', (e) => {
+      e.stopPropagation();
+      pushUndo();
+      mod.toggleAt(index);
+      scheduleSave();
+      renderModule(mod);
+    });
+    li.appendChild(num);
+  }
+
+  if (editing && editing.key === mod.key && editing.index === index) {
+    const input = document.createElement('input');
+    input.className = 'tile-edit';
+    input.type = 'text';
+    input.value = text;
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        commitEdit(mod, index, input.value);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        cancelEdit(mod);
+      }
+    });
+    input.addEventListener('blur', () => commitEdit(mod, index, input.value));
+    li.appendChild(input);
+  } else {
+    const textEl = document.createElement('span');
+    textEl.className = 'note-text';
+    textEl.textContent = text;
+    li.appendChild(textEl);
+    li.title = 'Click to edit, double-click to delete';
+
+    // Disambiguate single (edit) from double (delete) with a short timer.
+    let clickTimer = null;
+    li.addEventListener('click', (e) => {
+      if (e.target.closest('.drag-handle, .note-num, .note-line-btn')) return;
+      if (clickTimer) return; // second click handled by dblclick
+      clickTimer = setTimeout(() => {
+        clickTimer = null;
+        startEdit(mod, index);
+      }, CLICK_DELAY);
+    });
+    li.addEventListener('dblclick', (e) => {
+      if (e.target.closest('.drag-handle, .note-num, .note-line-btn')) return;
+      if (clickTimer) {
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      deleteItem(mod, index);
+    });
+
+    const actions = document.createElement('span');
+    actions.className = 'note-actions';
+
+    const copyBtn = document.createElement('button');
+    copyBtn.type = 'button';
+    copyBtn.className = 'note-line-btn';
+    copyBtn.title = 'Copy';
+    copyBtn.setAttribute('aria-label', 'Copy');
+    copyBtn.innerHTML = ICON_COPY;
+    copyBtn.addEventListener('click', () => copyText(text, copyBtn));
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'note-line-btn';
+    deleteBtn.title = 'Delete';
+    deleteBtn.setAttribute('aria-label', 'Delete');
+    deleteBtn.innerHTML = ICON_CLEAR;
+    deleteBtn.addEventListener('click', () => deleteItem(mod, index));
+
+    actions.append(copyBtn, deleteBtn);
+    li.appendChild(actions);
+  }
+
+  return li;
+}
+
+function buildDragHandle(li, mod, index) {
+  const handle = document.createElement('span');
+  handle.className = 'drag-handle';
+  handle.title = 'Drag to reorder';
+  handle.setAttribute('aria-label', 'Drag to reorder');
+  handle.innerHTML = ICON_GRIP;
+  handle.draggable = true;
+
+  handle.addEventListener('dragstart', (e) => {
+    dragSource = { key: mod.key, index };
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+    e.dataTransfer.setDragImage(li, 0, 0);
+    li.classList.add('dragging');
+  });
+  handle.addEventListener('dragend', () => {
+    dragSource = null;
+    li.classList.remove('dragging');
+    Array.from(mod.listEl.children).forEach((el) => el.classList.remove('drag-over'));
+  });
+  li.addEventListener('dragover', (e) => {
+    if (!dragSource || dragSource.key !== mod.key) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    li.classList.add('drag-over');
+  });
+  li.addEventListener('dragleave', () => li.classList.remove('drag-over'));
+  li.addEventListener('drop', (e) => {
+    if (!dragSource || dragSource.key !== mod.key) return;
+    e.preventDefault();
+    const from = dragSource.index;
+    li.classList.remove('drag-over');
+    if (from !== index) {
+      pushUndo();
+      mod.moveAt(from, index);
+      scheduleSave();
+      renderModule(mod);
+    }
+  });
+
+  return handle;
+}
+
+// Click-to-edit: swap the line for an input focused at the end.
+function startEdit(mod, index) {
+  editing = { key: mod.key, index };
+  renderModule(mod);
+  const input = mod.listEl.querySelector('.tile-edit');
+  if (input) {
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+  }
+}
+
+function commitEdit(mod, index, value) {
+  if (!editing || editing.key !== mod.key || editing.index !== index) return;
+  editing = null;
+  pushUndo();
+  mod.editAt(index, value); // empty value removes the line
+  scheduleSave();
+  renderModule(mod);
+}
+
+function cancelEdit(mod) {
+  editing = null;
+  renderModule(mod);
+}
+
+// Double-click a line (or its delete button) to remove it.
+function deleteItem(mod, index) {
+  pushUndo();
+  mod.removeAt(index);
+  scheduleSave();
+  renderModule(mod);
 }
 
 // Copy every note (one per line) without removing them.
 function copyAllNotes() {
-  if (!currentProject) return;
-  const items = projects.getProject(state, currentProject).notes || [];
+  const items = MODULES.notes.getItems();
   if (!items.length) return;
   copyText(items.join('\n'), els.copyAllButton);
 }
@@ -429,12 +670,12 @@ function copyAllNotes() {
 // Clear all notes.
 function clearAllNotes() {
   if (!currentProject) return;
-  const items = projects.getProject(state, currentProject).notes || [];
+  const items = MODULES.notes.getItems();
   if (!items.length) return;
   pushUndo();
   projects.clearNotes(state, currentProject);
   scheduleSave();
-  renderNotes();
+  renderModule(MODULES.notes);
 }
 
 // True when the caret sits at the very start of a field, with no selection.
@@ -500,7 +741,7 @@ async function captureWorkspaceNow() {
   const tabs = await chrome.tabs.query({ currentWindow: true });
   const reopenable = tabs.filter((t) => projects.isReopenable(t.url));
   state.projects[currentProject] = projects.captureWorkspace(
-    activeProject(),
+    projects.ensureProject(state, currentProject),
     reopenable,
     Date.now()
   );
@@ -512,7 +753,10 @@ async function captureWorkspaceNow() {
 // Reopen a removed tab in this window and drop it from the archive.
 async function restoreTab(url) {
   await chrome.tabs.create({ url, windowId: Number(windowId) });
-  state.projects[currentProject] = projects.unarchiveTab(activeProject(), url);
+  state.projects[currentProject] = projects.unarchiveTab(
+    projects.ensureProject(state, currentProject),
+    url
+  );
   await storage.save(state);
   renderRemoved();
 }
@@ -524,206 +768,9 @@ function renderAll() {
   // first so it survives truncation in the narrow header; plain 'Sid' when unbound.
   document.title = currentProject ? `${currentProject} — Sid` : 'Sid';
   renderProjectInput();
-  renderNotes();
   renderDayHeader();
-  renderPlanner();
+  Object.values(MODULES).forEach(renderModule);
   renderRemoved();
-}
-
-// Add an item to a global list on Enter; the input stays as the next empty tile.
-function addOnEnter(event, input, key) {
-  if (event.key !== 'Enter') return;
-  event.preventDefault();
-  if (!input.value.trim()) return;
-  pushUndo();
-  projects.addToList(state, key, input.value);
-  input.value = '';
-  scheduleSave();
-  renderPlanner();
-}
-
-// Backspace at the start of a planner add-line pulls the previous item back into
-// the line to edit it (text + the line's text), caret at the join.
-function pullBackListItem(event, input, key) {
-  const items = state[key] || [];
-  if (!items.length) return;
-  event.preventDefault();
-  pushUndo();
-  const prev = items[items.length - 1].text;
-  projects.removeFromList(state, key, items.length - 1);
-  input.value = prev + input.value;
-  scheduleSave();
-  renderPlanner();
-  input.focus();
-  input.setSelectionRange(prev.length, prev.length);
-}
-
-// Planner: schedule (left, plain) and tasks (right, numbered). Single-click a
-// line edits it in place, double-click deletes it, and lines can be dragged to
-// reorder within their own column (tasks renumber automatically).
-function renderPlanner() {
-  const schedule = state.schedule || [];
-  const tasks = state.tasks || [];
-  // Only hint on an empty column; once there are entries the add-line is blank.
-  els.scheduleInput.placeholder = schedule.length ? '' : 'Schedule…';
-  els.taskInput.placeholder = tasks.length ? '' : 'Task…';
-  renderTileColumn(els.scheduleList, schedule, 'schedule');
-  renderTileColumn(els.taskList, tasks, 'tasks');
-}
-
-function renderTileColumn(listEl, items, key) {
-  listEl.innerHTML = '';
-  const numbered = key === 'tasks';
-  items.forEach((item, i) => {
-    const li = document.createElement('li');
-    li.className = `planner-item${numbered && item.done ? ' done' : ''}`;
-
-    if (numbered) {
-      // The number doubles as a tick: click it to toggle done (immediate, no
-      // edit/delete disambiguation needed), independent of the text's own
-      // click-to-edit. stopPropagation keeps that click from also starting an
-      // edit on the row.
-      const num = document.createElement('span');
-      num.className = 'planner-num';
-      if (item.done) num.innerHTML = ICON_TICK;
-      else num.textContent = `${i + 1}.`;
-      num.title = item.done ? 'Mark not done' : 'Mark done';
-      num.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleTask(i);
-      });
-      li.appendChild(num);
-    }
-
-    if (editingTile && editingTile.key === key && editingTile.index === i) {
-      const input = document.createElement('input');
-      input.id = 'tileEditInput';
-      input.className = 'tile-edit';
-      input.type = 'text';
-      input.value = item.text;
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          commitTileEdit(key, i, input.value);
-        } else if (e.key === 'Escape') {
-          e.preventDefault();
-          cancelTileEdit();
-        }
-      });
-      input.addEventListener('blur', () => commitTileEdit(key, i, input.value));
-      li.appendChild(input);
-    } else {
-      const text = document.createElement('span');
-      text.className = 'planner-text';
-      text.textContent = item.text;
-      li.appendChild(text);
-      li.title = 'Click to edit, double-click to delete';
-
-      // Disambiguate single (edit) from double (delete) with a short timer.
-      let clickTimer = null;
-      li.addEventListener('click', () => {
-        if (clickTimer) return; // second click handled by dblclick
-        clickTimer = setTimeout(() => {
-          clickTimer = null;
-          startTileEdit(key, i);
-        }, CLICK_DELAY);
-      });
-      li.addEventListener('dblclick', () => {
-        if (clickTimer) {
-          clearTimeout(clickTimer);
-          clickTimer = null;
-        }
-        deleteTile(key, i);
-      });
-
-      attachTileDrag(li, key, i);
-    }
-
-    listEl.appendChild(li);
-  });
-}
-
-// The list element for a planner column, so drag handlers can clear highlights
-// across the whole column regardless of which line they're attached to.
-function listElFor(key) {
-  return key === 'tasks' ? els.taskList : els.scheduleList;
-}
-
-// Click-to-edit: swap the line for an input focused at the end.
-function startTileEdit(key, index) {
-  editingTile = { key, index };
-  renderPlanner();
-  const input = document.getElementById('tileEditInput');
-  if (input) {
-    input.focus();
-    input.setSelectionRange(input.value.length, input.value.length);
-  }
-}
-
-function commitTileEdit(key, index, value) {
-  if (!editingTile || editingTile.key !== key || editingTile.index !== index) return;
-  editingTile = null;
-  pushUndo();
-  projects.editListItem(state, key, index, value); // empty value removes the line
-  scheduleSave();
-  renderPlanner();
-}
-
-function cancelTileEdit() {
-  editingTile = null;
-  renderPlanner();
-}
-
-// Double-click a line to delete it.
-function deleteTile(key, index) {
-  pushUndo();
-  projects.removeFromList(state, key, index);
-  scheduleSave();
-  renderPlanner();
-}
-
-// Click a task's number to toggle its done/strikethrough state in place.
-function toggleTask(index) {
-  pushUndo();
-  projects.toggleListItem(state, 'tasks', index);
-  scheduleSave();
-  renderPlanner();
-}
-
-// Drag-and-drop reorder for planner lines (schedule or tasks, each within its
-// own column only).
-function attachTileDrag(li, key, index) {
-  li.draggable = true;
-  li.addEventListener('dragstart', (e) => {
-    dragSource = { key, index };
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', String(index));
-    li.classList.add('dragging');
-  });
-  li.addEventListener('dragend', () => {
-    dragSource = null;
-    li.classList.remove('dragging');
-    Array.from(listElFor(key).children).forEach((el) => el.classList.remove('drag-over'));
-  });
-  li.addEventListener('dragover', (e) => {
-    if (!dragSource || dragSource.key !== key) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    li.classList.add('drag-over');
-  });
-  li.addEventListener('dragleave', () => li.classList.remove('drag-over'));
-  li.addEventListener('drop', (e) => {
-    if (!dragSource || dragSource.key !== key) return;
-    e.preventDefault();
-    const from = dragSource.index;
-    li.classList.remove('drag-over');
-    if (from !== index) {
-      pushUndo();
-      projects.moveListItem(state, key, from, index);
-      scheduleSave();
-      renderPlanner();
-    }
-  });
 }
 
 // The day/date label sits above the schedule.
@@ -741,57 +788,6 @@ function renderProjectInput() {
   // Don't clobber what the user is typing into the open combobox.
   if (comboOpen && document.activeElement === els.projectInput) return;
   els.projectInput.value = bound ? currentProject : '';
-}
-
-// Notes are a raw notepad: each committed row is plain text with copy/clear
-// buttons revealed on hover; a persistent empty compose row sits at the end. The
-// list is disabled while the window is unbound.
-function renderNotes() {
-  const bound = currentProject !== null;
-  const items = bound ? projects.getProject(state, currentProject).notes || [] : [];
-
-  els.noteComposeRow.disabled = !bound;
-  // Hint "Notes…" only on a blank notepad; once you've written, the line is bare.
-  els.noteComposeRow.placeholder = !bound ? 'Pick a project first' : items.length ? '' : 'Notes…';
-  els.copyAllButton.disabled = !items.length;
-  els.completeAllButton.disabled = !items.length;
-
-  // Rebuild only the committed rows; the compose row at the end is persistent
-  // so in-progress text and focus survive a re-render.
-  els.noteList.querySelectorAll('.note-item').forEach((el) => el.remove());
-
-  items.forEach((text, i) => {
-    const item = document.createElement('li');
-    item.className = 'note-item';
-
-    const textEl = document.createElement('span');
-    textEl.className = 'note-text';
-    textEl.textContent = text;
-
-    // Per-line copy / clear buttons, revealed on hover.
-    const actions = document.createElement('span');
-    actions.className = 'note-actions';
-
-    const copyBtn = document.createElement('button');
-    copyBtn.type = 'button';
-    copyBtn.className = 'note-line-btn';
-    copyBtn.title = 'Copy';
-    copyBtn.setAttribute('aria-label', 'Copy');
-    copyBtn.innerHTML = ICON_COPY;
-    copyBtn.addEventListener('click', () => copyText(text, copyBtn));
-
-    const clearBtn = document.createElement('button');
-    clearBtn.type = 'button';
-    clearBtn.className = 'note-line-btn';
-    clearBtn.title = 'Clear';
-    clearBtn.setAttribute('aria-label', 'Clear');
-    clearBtn.innerHTML = ICON_CLEAR;
-    clearBtn.addEventListener('click', () => deleteNote(i));
-
-    actions.append(copyBtn, clearBtn);
-    item.append(textEl, actions);
-    els.noteList.insertBefore(item, els.noteComposeItem);
-  });
 }
 
 // Resize a textarea to fit its content (so writing wraps across lines).
@@ -843,7 +839,7 @@ function renderRemoved() {
 // --- Undo ------------------------------------------------------------------
 
 // Snapshot the whole state before a content edit so it can be reverted. Covers
-// both panels (notes, schedule, tasks, distractions).
+// every list in the panel (notes, schedule, tasks, distractions).
 function pushUndo() {
   undoStack.push(JSON.stringify(state));
   if (undoStack.length > UNDO_LIMIT) undoStack.shift();

@@ -98,19 +98,22 @@
 
       <div class="chrome-panel">
       <section class="planner">
-        <div class="planner-col">
+        <div id="scheduleSection" class="planner-col">
           <div id="dayDate" class="col-head" aria-label="Today"></div>
-          <ul id="scheduleList" class="tile-list"></ul>
-          <input
-            id="scheduleInput"
-            class="tile-input"
-            type="text"
-            placeholder="Schedule&hellip;"
-            autocomplete="off"
-            aria-label="Add to schedule"
-          />
+          <ul id="scheduleList" class="note-list">
+            <li id="scheduleComposeItem" class="note-compose-item">
+              <input
+                id="scheduleComposeRow"
+                class="tile-input"
+                type="text"
+                placeholder="Schedule&hellip;"
+                autocomplete="off"
+                aria-label="Add to schedule"
+              />
+            </li>
+          </ul>
         </div>
-        <div class="planner-col">
+        <div id="taskSection" class="planner-col">
           <div class="newtab-link-row">
             <button id="newtabLink" class="newtab-link" type="button"
               title="Open new tab" aria-label="Open new tab">
@@ -122,27 +125,34 @@
               </svg>
             </button>
           </div>
-          <ul id="taskList" class="tile-list"></ul>
-          <input
-            id="taskInput"
-            class="tile-input"
-            type="text"
-            placeholder="Task&hellip;"
-            autocomplete="off"
-            aria-label="Add a task"
-          />
+          <ul id="taskList" class="note-list">
+            <li id="taskComposeItem" class="note-compose-item">
+              <input
+                id="taskComposeRow"
+                class="tile-input"
+                type="text"
+                placeholder="Task&hellip;"
+                autocomplete="off"
+                aria-label="Add a task"
+              />
+            </li>
+          </ul>
         </div>
       </section>
 
-      <section class="distractions">
-        <input
-          id="distractionInput"
-          class="distraction-box"
-          type="text"
-          placeholder="Distractions&hellip;"
-          autocomplete="off"
-          aria-label="Add a distraction"
-        />
+      <section id="distractionSection" class="notes distractions">
+        <ul id="distractionList" class="note-list">
+          <li id="distractionComposeItem" class="note-compose-item">
+            <input
+              id="distractionComposeRow"
+              class="tile-input"
+              type="text"
+              placeholder="Distractions&hellip;"
+              autocomplete="off"
+              aria-label="Add a distraction"
+            />
+          </li>
+        </ul>
       </section>
       </div>
     </main>

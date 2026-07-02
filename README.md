@@ -30,31 +30,36 @@ It is not a task manager, not a notes app, and not an AI assistant.
   **copy-all** / **clear-all** notes.
   The whole panel is styled like a plain written document — no tiles, boxes, or
   list buttons; you type straight onto lines.
-- **Notes** — a raw notepad that behaves like a small text editor. **Click
-  anywhere in the notes area** — a committed line or blank space — to jump the
-  cursor into the write-line, ready to type (it won't steal an active text
-  selection). The bottom line is always an empty line you write on: **Enter**
-  commits it (**Shift+Enter** inserts a newline); **Backspace** at the very start
-  of the write-line pulls the previous line back in to edit it. Committed lines
-  are plain text; **hover** a line to reveal **copy** and **clear** buttons for it.
-  The header's **copy-all** and **clear-all** icons copy every note (one per line)
-  or empty the list. Empty inputs hint with `Notes…`, `Schedule…`, `Task…`,
-  `Distractions…`, hidden once the list has entries.
-- **Planner** — two global columns: a plain-text **schedule** (left, no bullets)
-  and a numbered **task** list (right), with today's **day and date** above the
-  schedule. Type on a column's bottom line and press Enter to add an entry. On
-  both lists, **single-click a line's text to edit** it in place (Enter commits,
-  Esc cancels, empty removes it), **double-click to delete** it, and **drag to
-  reorder** within its own column (task numbers renumber automatically). A task's
-  **number doubles as a tick** — click it (not the text) to mark it done, turning
-  it into a check mark with the text struck through; click again to undo.
+- **Every editable list — Notes, Schedule, Tasks, and Distractions — shares one
+  interaction model**, so there's a single thing to learn everywhere in the
+  panel (and on the [new tab page](#new-tab-page)):
+  - **Add**: the bottom line of each list is always an empty line you write on.
+    **Enter** commits it. On Notes (a multi-line notepad), **Shift+Enter**
+    inserts a newline instead; Schedule, Tasks, and Distractions are single-line,
+    so Enter is the only thing Enter does. **Backspace** at the very start of the
+    write-line pulls the previous entry back in to edit it.
+  - **Edit**: **single-click a committed line** to edit it in place — **Enter**
+    commits, **Esc** cancels, and emptying it then pressing **Enter** removes it.
+  - **Delete**: **double-click a line** to delete it outright.
+  - **Copy**: **hover** a line to reveal a small **copy** button, and a small
+    **delete (×)** button as an alternative to double-click.
+  - **Reorder** (Schedule and Tasks only): **drag** a line to reorder it within
+    its own list — hover reveals a small **grip handle** so the drag zone is
+    visible rather than an invisible click-and-drag anywhere on the row.
+  - **Complete** (Tasks only): the leading **number doubles as a tick** — click
+    it (not the text) to mark the task done, turning it into a check mark with
+    the text struck through; click again to undo. This is independent of the
+    text's own click-to-edit.
+  Empty lists hint with `Notes…`, `Schedule…`, `Task…`, `Distractions…`, hidden
+  once they have entries. The header's **copy-all** and **clear-all** icons copy
+  every note (one per line) or empty the list — Notes only.
+- **Planner** — two global columns: a **schedule** (left) and a numbered **task**
+  list (right), with today's **day and date** above the schedule.
 - A link at the **top-right of the global section** opens the full-page
   ([new tab](#new-tab-page)) view of these global surfaces.
-- **Distractions** — one global quick-capture box at the bottom of the panel.
-  Click it, type a distraction, and press Enter; it's saved and the box clears —
-  that's the whole interaction in the panel (no in-panel review; distractions are
-  shared across every window). Open the **new tab page** to see and manage the
-  full captured list.
+- **Distractions** — a global quick-capture list at the bottom of the panel,
+  shared across every window, using the same add/edit/delete/copy model as
+  Notes. Open the **new tab page** for the same list on a full page.
 - **Right-click any editable field on any page** (not just Sid) and choose
   **Paste from "&lt;project&gt;" notes** to insert one of the focused window's
   project notes at the cursor — a submenu lists each note, truncated if long.
@@ -78,9 +83,10 @@ It is not a task manager, not a notes app, and not an AI assistant.
   whole state per calendar day (last 7 days) in a separate storage key, as a
   safety net independent of undo (which is in-memory only and resets on reload).
   Browse and restore them from the **new tab page's Backups list**.
-- **Undo** (header icon) reverts the last content change in either panel — adding
-  or deleting a note, schedule/task/distraction line, or reordering a planner
-  line — one step at a time. History is per window and not kept across reloads.
+- **Undo** (header icon) reverts the last content change in either panel — adding,
+  editing, or deleting a note/schedule/task/distraction line, toggling a task
+  done, or reordering a planner line — one step at a time. History is per window
+  and not kept across reloads.
 - **Across a Chrome restart**, window IDs are reassigned, so Sid does not try to
   restore window↔project bindings. On startup it prunes bindings for windows
   that no longer exist, and each reopened window comes up **unbound** — prompting
@@ -98,21 +104,21 @@ beneath it), then a **responsive grid of modules** — **Schedule**, **Tasks**,
 the window is wide enough, wrapping down to fewer columns (to one, on a narrow
 window) as it narrows.
 
-All five modules share the **same design and interaction**, so there's one thing
-to learn: a persistent compose line at the bottom of each list — type and press
-**Enter** to add an entry (**Shift+Enter** for a newline; **Backspace** at the
-start of the line pulls the previous entry back in to edit it) — and **click
-anywhere in the module** (a committed line or blank space) to jump the cursor
-into that write-line. Each committed line is plain text; **hover** it to reveal
-**copy** and **clear** buttons. The only difference is **Tasks**, whose lines are
-numbered. **Projects** is the one exception to the shared interaction — instead
-of typing, click an active project's name to **rename** it inline, or use its
-**Archive** button; an archived project shows muted with a **Restore** button.
-Unlike the side panel, nothing here is tied to "the current project" — every row
-names its project explicitly, so you can manage any project from any window.
-**Schedule** and **Tasks** here read/write the same lists as the side panel's
-planner, just displayed plainly (no click-to-edit, drag-reorder, or done-ticking
-on this page — that richer interaction is the side panel's).
+Schedule, Tasks, Scratchpad, and Distractions share the **exact same interaction
+model as the side panel** (see [How it works](#how-it-works)): a persistent
+compose line adds an entry on **Enter** (**Shift+Enter** for a newline on
+Scratchpad, which is multi-line like Notes; single-line elsewhere); **single-click**
+a committed line to edit it in place; **double-click** to delete it; **hover** to
+reveal **copy** and **delete** buttons; **Schedule** and **Tasks** also reveal a
+**drag handle** on hover to reorder; and **Tasks**' leading number doubles as a
+completion tick. **Schedule** and **Tasks** here read and write the exact same
+lists as the side panel's planner, so edits and reordering made on either page
+show up on the other immediately. **Projects** is the one exception to the shared
+interaction — instead of typing, click an active project's name to **rename** it
+inline, or use its **Archive** button; an archived project shows muted with a
+**Restore** button. Unlike the side panel, nothing here is tied to "the current
+project" — every row names its project explicitly, so you can manage any project
+from any window.
 
 Below the grid, a collapsible **Backups** list (see above): dated automatic
 snapshots, each with a **Restore** button that asks for confirmation, then

@@ -265,13 +265,17 @@ body {
   padding: 0;
 }
 
-/* Committed note: a plain line with copy/clear buttons revealed on hover. */
+/* Committed line, shared by every editable list (notes, scratchpad, schedule,
+   tasks, distractions): single-click edits it in place, double-click deletes
+   it, and hovering reveals copy/delete buttons (plus a drag handle on the
+   reorderable lists). */
 .note-item {
   display: flex;
   align-items: baseline;
   gap: 6px;
   padding: 1px 0;
   line-height: 1.65;
+  cursor: pointer;
 }
 
 .note-text {
@@ -291,6 +295,61 @@ body {
 .note-item:hover .note-actions,
 .note-actions:focus-within {
   opacity: 1;
+}
+
+/* The task number doubles as a tick: click it to toggle done, independent of
+   the text's click-to-edit. Always visible (not a hover affordance). */
+.note-num {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.note-num svg {
+  display: block;
+}
+
+.note-item.done .note-num {
+  color: var(--ok);
+}
+
+.note-item.done .note-text {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+/* Drag-to-reorder handle (schedule, tasks): reserved space, revealed on hover
+   so the drag zone is discoverable instead of invisible. */
+.drag-handle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  color: var(--muted);
+  opacity: 0;
+  cursor: grab;
+  transition: opacity 0.1s ease;
+}
+
+.note-item:hover .drag-handle,
+.drag-handle:focus-visible {
+  opacity: 1;
+}
+
+.drag-handle svg {
+  display: block;
+}
+
+.note-item.dragging {
+  opacity: 0.4;
+}
+
+.note-item.drag-over {
+  box-shadow: inset 0 2px 0 var(--focus);
 }
 
 .note-line-btn {
@@ -346,57 +405,6 @@ body {
   min-width: 0;
 }
 
-.tile-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-/* A plain text line: single-click edits, double-click deletes. */
-.planner-item {
-  display: flex;
-  align-items: baseline;
-  gap: 5px;
-  padding: 2px 0;
-  line-height: 1.65;
-  cursor: pointer;
-}
-
-/* The task number doubles as a tick: click it to toggle done, independent of
-   the text's click-to-edit. */
-.planner-num {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-  cursor: pointer;
-}
-
-.planner-num svg {
-  display: block;
-}
-
-.planner-text {
-  flex: 1;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-/* Copy-flash (new-tab distractions/schedule) and completed-task strikethrough */
-.planner-item.copied {
-  color: var(--ok);
-}
-
-.planner-item.done .planner-num {
-  color: var(--ok);
-}
-
-.planner-item.done .planner-text {
-  text-decoration: line-through;
-  color: var(--muted);
-}
-
 /* Inline edit field: a borderless line that matches the text */
 .tile-edit {
   flex: 1;
@@ -408,15 +416,6 @@ body {
   font: inherit;
   line-height: 1.65;
   outline: none;
-}
-
-/* Drag-to-reorder (schedule) feedback */
-.planner-item.dragging {
-  opacity: 0.4;
-}
-
-.planner-item.drag-over {
-  box-shadow: inset 0 2px 0 var(--focus);
 }
 
 /* Trailing add line: a plain line, not a box */
@@ -526,29 +525,11 @@ body {
   padding: 6px 12px;
 }
 
-/* Distractions: a quick-capture line, no in-panel review (see the new-tab page
-   for the always-visible list). A light line separates it from the planner above. */
+/* Distractions: a global quick-capture list, same list model as notes. A
+   light line separates it from the planner above. */
 .distractions {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
   padding-top: 14px;
   border-top: 1px solid var(--border);
-}
-
-.distraction-box {
-  width: 100%;
-  padding: 1px 0;
-  border: none;
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-  line-height: 1.65;
-  outline: none;
-}
-
-.distraction-box::placeholder {
-  color: var(--muted);
 }
 
 .status {

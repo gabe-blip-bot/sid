@@ -171,6 +171,15 @@ export function removeScratchpadNote(state, index) {
   if (Array.isArray(state.notepad)) state.notepad.splice(index, 1);
 }
 
+// Replace the item at `index`; if the new text is blank, remove it instead.
+export function editScratchpadNote(state, index, text) {
+  if (!Array.isArray(state.notepad)) return;
+  if (index < 0 || index >= state.notepad.length) return;
+  const trimmed = text.trim();
+  if (trimmed === '') state.notepad.splice(index, 1);
+  else state.notepad[index] = trimmed;
+}
+
 // --- Distractions (a global quick-capture list) ----------------------------
 
 export function addDistraction(state, text) {
@@ -182,6 +191,15 @@ export function addDistraction(state, text) {
 
 export function removeDistraction(state, index) {
   if (Array.isArray(state.distractions)) state.distractions.splice(index, 1);
+}
+
+// Replace the item at `index`; if the new text is blank, remove it instead.
+export function editDistraction(state, index, text) {
+  if (!Array.isArray(state.distractions)) return;
+  if (index < 0 || index >= state.distractions.length) return;
+  const trimmed = text.trim();
+  if (trimmed === '') state.distractions.splice(index, 1);
+  else state.distractions[index] = trimmed;
 }
 
 // --- Generic global lists (schedule, tasks) --------------------------------
